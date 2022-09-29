@@ -1,0 +1,363 @@
+import Raster from 'raster-core';
+import Chart from 'chart.js/auto';
+import Drawing from '../../common/Drawing';
+import DollyCam from '../../common/DollyCam';
+
+let mainFunction = (config) => {
+
+    // FIX for ios devices regarding canvas height
+    let resizeCallback = () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+    }
+
+    window.addEventListener('resize', resizeCallback);
+    resizeCallback();
+
+    config.getGeomErrorSlug = (lod, kPatchBase) => 'geom/' + lod + '/' + kPatchBase;
+    config.errorCallback = (err) => {console.error(err)};
+    
+    const canvas = document.querySelector("#webGl");
+    let gl = canvas.getContext('webgl2');
+    let isWebGL2 = true;
+    if (!gl) {
+        gl = canvas.getContext('webgl');
+        isWebGL2 = false;
+    }
+
+    let raster = new Raster(gl, config, config.initialCamera);
+
+    // Setup Config UI 
+    let lodCheckbox = document.querySelector('#showLod')
+    lodCheckbox.checked = raster.getParameters().showLodAsColor;
+    lodCheckbox.addEventListener('change', () => { raster.getParameters().setParam('showLodAsColor', lodCheckbox.checked) })
+
+    let renderGeometryCheckbox = document.querySelector('#renderGeometry')
+    renderGeometryCheckbox.checked = raster.getParameters().renderGeometry;
+    renderGeometryCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderGeometry', renderGeometryCheckbox.checked) })
+
+    let renderKPatchLinesCheckbox = document.querySelector('#renderKPatchLines')
+    renderKPatchLinesCheckbox.checked = raster.getParameters().renderKPatchLines;
+    renderKPatchLinesCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderKPatchLines', renderKPatchLinesCheckbox.checked) })
+
+    let renderFlatCheckbox = document.querySelector('#renderFlat')
+    renderFlatCheckbox.checked = raster.getParameters().renderFlat;
+    renderFlatCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderFlat', renderFlatCheckbox.checked) });
+
+    let renderUniColorCheckbox = document.querySelector('#renderUniColor')
+    renderUniColorCheckbox.checked = raster.getParameters().renderUniColor;
+    renderUniColorCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderUniColor', renderUniColorCheckbox.checked) });
+
+    let disableUpdateOnCamCheckbox = document.querySelector('#disableCamUpdate');
+    disableUpdateOnCamCheckbox.checked = raster.getParameters().disableUpdateOnCam;
+    disableUpdateOnCamCheckbox.addEventListener('change', () => { raster.getParameters().setParam('disableUpdateOnCam', disableUpdateOnCamCheckbox.checked) });
+
+    let useDistanceMetricCheckbox = document.querySelector('#useDistanceMetric');
+    useDistanceMetricCheckbox.checked = raster.getParameters().useDistanceMetric;
+    useDistanceMetricCheckbox.addEventListener('change', () => { raster.getParameters().setParam('useDistanceMetric', useDistanceMetricCheckbox.checked) });
+
+    let useGeomMetricCheckbox = document.querySelector('#useGeomMetric');
+    useGeomMetricCheckbox.checked = raster.getParameters().useGeomMetric;
+    useGeomMetricCheckbox.addEventListener('change', () => { raster.getParameters().setParam('useGeomMetric', useGeomMetricCheckbox.checked) });
+
+    let useCullingMetricCheckbox = document.querySelector('#useCullingMetric');
+    useCullingMetricCheckbox.checked = raster.getParameters().useCullingMetric;
+    useCullingMetricCheckbox.addEventListener('change', () => { raster.getParameters().setParam('useCullingMetric', useCullingMetricCheckbox.checked) });
+
+    let kpatchBaseDiv = document.querySelector('#kPatchBase');
+    for (let i = (raster.getParameters().tileSideLength - 1) / 2; i > 16; i = i / 2) {
+        let option = document.createElement('option');
+        option.value = i + 1;
+        option.innerHTML = i + 1;
+        if (i + 1 == raster.getParameters().kPatchBase) {
+            option.selected = true;
+        }
+        kpatchBaseDiv.appendChild(option);
+    }
+    kpatchBaseDiv.addEventListener('change', () => {
+        raster.getParameters().setParam('kPatchBase', kpatchBaseDiv.value);
+    });
+
+
+    let statsButton = document.querySelector('#writeStats');
+    statsButton.addEventListener('click', () => {
+        raster.getTimer().writeAverageTimingsToConsole();
+    });
+
+    let maxLodDiv = document.querySelector('#maxLod');
+    maxLodDiv.value = raster.getParameters().currentLod;
+    maxLodDiv.addEventListener('change', () => {
+        let newVal = Number.parseInt(maxLodDiv.value);
+        if (newVal >= 0 && newVal <= raster.getParameters().maxLod) {
+            raster.getParameters().setParam('currentLod', newVal);
+        } else {
+            maxLodDiv.value = raster.getParameters().currentLod;
+        }
+    });
+
+    let errorThresholdDiv = document.querySelector('#errorThreshold');
+    errorThresholdDiv.value = raster.getParameters().errorThreshold;
+    errorThresholdDiv.addEventListener('change', () => {
+        let newVal = Number.parseFloat(errorThresholdDiv.value);
+        if (newVal > 0.0) {
+            raster.getParameters().setParam('errorThreshold', errorThresholdDiv.value)
+        } else {
+            errorThresholdDiv.value = raster.getParameters().errorThreshold;
+        }
+    });
+
+
+    // Setup Info UI
+    const fpsDiv = document.querySelector('#fps');
+    const vertexCounterDiv = document.querySelector('#vertexCount');
+    const loadingDiv = document.querySelector('#loadingSpinner');
+
+    // Setup Chart UI
+    const loadingChartDiv = document.querySelector('#loadingChart');
+    let loadingChart = new Chart(loadingChartDiv, {
+        type: 'bar',
+        data: {
+            labels: ['Height', 'Color'],
+            datasets: [{
+                label: '# of Textures currently loading',
+                data: [0, 0],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 150,
+                }
+            }
+        }
+    });
+    const ramUsageChartDiv = document.querySelector('#ramUsageChart');
+    let ramUsageChart = new Chart(ramUsageChartDiv, {
+        type: 'doughnut',
+        data: {
+            labels: ['Rendering', 'Cached on GPU', 'Cached in RAM'],
+            datasets: [
+                {
+                    label: 'Composition of tiles currently in RAM',
+                    data: [0, 0, 0],
+                    backgroundColor: [
+                        'green',
+                        'yellow',
+                        'red',
+                    ]
+                }
+            ]
+        }
+    })
+
+    const gpuUsgeChartDiv = document.querySelector('#gpuUsageChart');
+    let gpuUsageChart = new Chart(gpuUsgeChartDiv, {
+        type: 'doughnut',
+        data: {
+            labels: ['Rendering', 'Caching on GPU'],
+            datasets: [
+                {
+                    label: 'Composition of tiles currently in GPU memory',
+                    data: [0, 0],
+                    backgroundColor: [
+                        'green',
+                        'yellow',
+                    ]
+                }
+            ]
+        }
+    })
+
+    let getBinNodeChartsLabels = () => {
+        let binNodeCounter = raster.getCounters().getBinNodeCounter().getCounters();
+        return binNodeCounter.map((val, index) => index != binNodeCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
+    }
+
+    const binNodesChartDiv = document.querySelector('#binNodesChart');
+    let binNodesChart = new Chart(binNodesChartDiv, {
+        type: 'bar',
+        data: {
+            labels: getBinNodeChartsLabels(),
+            datasets: [{
+                label: '# of bin nodes currently rendered',
+                data: raster.getCounters().getBinNodeCounter().getCounters(),
+                borderWidth: 1,
+                backgroundColor: [
+                    'green',
+                ]
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 300,
+                }
+            }
+        }
+    });
+    let prevBinNodeCountersLength = raster.getCounters().getBinNodeCounter().getCounters().length;
+
+    let getMblockChartsLabels = () => {
+        let mblockCounter = raster.getCounters().getMblockCounter().getCounters();
+        return mblockCounter.map((val, index) => index != mblockCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
+    }
+
+    const mblocksChartDiv = document.querySelector('#mblocksChart');
+    let mblocksChart = new Chart(mblocksChartDiv, {
+        type: 'bar',
+        data: {
+            labels: getMblockChartsLabels(),
+            datasets: [{
+                label: '# of mblocks currently rendered',
+                data: raster.getCounters().getMblockCounter().getCounters(),
+                borderWidth: 1,
+                backgroundColor: [
+                    'green',
+                ]
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 150,
+                }
+            }
+        }
+    });
+
+    // Setup linedrawing
+    const drawing = new Drawing(raster);
+
+    // Add UI Buttons
+    const chartContainer = document.querySelector('#chartContainer');
+    const controlContainer = document.querySelector('#controlContainer');
+
+    let showChartsButton = document.querySelector('#showCharts');
+    showChartsButton.addEventListener('click', () => {
+        if (chartContainer.style.visibility !== 'hidden') {
+            chartContainer.style.visibility = 'hidden';
+            showChartsButton.innerHTML = 'Show Statistics';
+        } else {
+            chartContainer.style.visibility = 'visible';
+            showChartsButton.innerHTML = 'Hide Statistics';
+        }
+    });
+
+    let showControlsButton = document.querySelector('#showControls');
+    showControlsButton.addEventListener('click', () => {
+        if (controlContainer.style.visibility !== 'hidden') {
+            controlContainer.style.visibility = 'hidden';
+            showControlsButton.innerHTML = 'Show Settings';
+        } else {
+            controlContainer.style.visibility = 'visible';
+            showControlsButton.innerHTML = 'Hide Settings';
+        }
+    });
+
+    let drawingConfigContainerDiv = document.querySelector('#drawingContainer');
+    let enableDrawingButton = document.querySelector('#enableDrawing');
+    enableDrawingButton.addEventListener('click', () => {
+        raster.getCamera().setControlActive(!raster.getCamera().isControlActive());
+        drawing.setActive(!drawing.isActive);
+        drawingConfigContainerDiv.style.visibility = drawing.isActive ? 'visible' : 'hidden';
+        if (drawing.isActive) {
+            enableDrawingButton.innerHTML = 'Disable Drawing';
+        } else {
+            enableDrawingButton.innerHTML = 'Enable Drawing';
+        }
+    });
+
+    let topDownModeButton = document.querySelector('#topDownMode');
+    topDownModeButton.addEventListener('click', () => {
+        raster.getCamera().setTopDownMode(!raster.getCamera().isTopDownMode());
+        if (raster.getCamera().isTopDownMode()) {
+            topDownModeButton.innerHTML = 'Disable Top Down Mode';
+        } else {
+            topDownModeButton.innerHTML = 'Enable Top Down Mode';
+        }
+    })
+
+    // Dolly Cam
+    let dollyCam;
+    if (config.dollyCam && config.dollyCam.length > 0) {
+        dollyCam = new DollyCam(raster, config.dollyCam);
+    }
+
+    // UI Updates
+    let updateMemoryUsageCharts = () => {
+        ramUsageChart.data.datasets[0].data = [
+            raster.getQuadTree().renderList.size,
+            raster.getQuadTree().onGPUList.size,
+            raster.getQuadTree().onRAMList.size,
+        ];
+        ramUsageChart.update();
+
+        gpuUsageChart.data.datasets[0].data = [
+            raster.getQuadTree().renderList.size,
+            raster.getQuadTree().onGPUList.size,
+        ]
+        gpuUsageChart.update();
+
+        if (raster.getCounters().getBinNodeCounter().getCounters().length != prevBinNodeCountersLength) {
+            prevBinNodeCountersLength = raster.getCounters().getBinNodeCounter().getCounters().length;
+            binNodesChart.data.labels = getBinNodeChartsLabels();
+        }
+        binNodesChart.data.datasets[0].data = raster.getCounters().getBinNodeCounter().getCounters();
+        binNodesChart.update();
+
+        mblocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
+        mblocksChart.update();
+    }
+
+    raster.setLoadingFinishedCallback(updateMemoryUsageCharts)
+    raster.setRenderLoopCallback((didDraw, swapped) => {
+        didDraw && dollyCam && dollyCam.start();
+        dollyCam && dollyCam.advance(swapped);
+        
+        fpsDiv.innerHTML = 'FPS: ' + raster.fps;
+        vertexCounterDiv.innerHTML = 'Vertices: ' + raster.getCounters().getVertexCounter().vertices.toLocaleString();
+        loadingChart.data.datasets[0].data = [raster.getLoadingState().currentlyLoadingHeight, raster.getLoadingState().currentlyLoadingColor];
+        loadingChart.update();
+
+        loadingDiv.style.visibility = !raster.getLoadingState().currentlyLoadingHeight && !raster.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
+
+        // Cam does not update but maybe lines change -> redraw lines
+        if (drawing.isActive && (drawing.hasChanged() || didDraw)) {
+            drawing.renderResult();
+        }
+    });
+    raster.setDrawCallback(() => {
+
+        // Terrain has changed and line draw will not happen in general render loop callback
+        if (!drawing.isActive) {
+            drawing.renderResult();
+        }
+    });
+
+    if (isWebGL2) {
+        raster.getGlInfo().recreateCombinedRenderTargets()
+    } else {
+        raster.getGlInfo().recreateColorRenderTarget();
+        raster.getGlInfo().recreatePixelPosRenderTarget();
+    }
+    raster.start();
+}
+
+fetch('config').then(res => {
+    res.json().then(config => mainFunction(config));
+})

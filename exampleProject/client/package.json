@@ -1,0 +1,23 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "^3.5.0",
+    "copy-webpack-plugin": "^8.1.1",
+    "geotiff": "^1.0.4",
+    "twgl.js": "^4.19.1"
+  },
+  "devDependencies": {
+    "raw-loader": "^4.0.2",
+    "webpack": "^5.35.1",
+    "webpack-cli": "^4.6.0",
+    "webpack-glsl-loader": "^1.0.1"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "tif-to-png",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "geotiff": "^1.0.4",
+    "jimp": "^0.16.1"
+  }
+}

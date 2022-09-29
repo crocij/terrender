@@ -1,0 +1,11 @@
+{
+    "assets": {
+        "heightAssets": "/Volumes/DataSSD/switzerland/heightSwitzerland",
+        "maxLodLevels": "7",
+        "kPatchBase": 129,
+        "minDifference": 0,
+        "xStart": 66,
+        "yStart": 48,
+        "boundaries": [0, 0, 5.625, 2.8125]
+    }
+}

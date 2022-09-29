@@ -1,0 +1,16 @@
+{
+  "name": "hello_world_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "helloWorld.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nconf": "^0.11.2",
+    "node-static": "^0.7.11"
+  }
+}
