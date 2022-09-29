@@ -78,3 +78,7 @@ The script can be run with the following command:
 Note that this command also increases the max memory node will use to 32GB (but it will not use it, lod 7 kPatchBase 65 uses around 3GB). Further note that the script might run sometime depending on the parameters or might fail completely due to restrictions of the node engine regarding memory and callstack size. Additionally it enables the script to manually trigger the garbage collection.
 
 In the same folder a (formatted) example can be found for the produced tree with maxLod 2 and kPatchBase 129
+
+# tifToPng
+
+This is a small helper node program that takes as argument a height TIFF file and converts it to PNG. It converts the height values to float32 so they fit into the 4 bytes per PNG pixel. To run it first install the node modules by running ```npm i``` in the ```tigToPng``` folder. Then you can run the script with ```node index.js /path/to/file```. If you want to batch convert your prepared dataset you can run ```find . -name '*.tif' -exec node /PATH/TO/index.js {} \;``` in the root folder of your dataset. Note that it only creates the PNG files but does not delete the old TIFF files.
