@@ -9,6 +9,10 @@ class Counters {
     #mblockCounter;
     #genericCounters;
 
+    /**
+     * Takes as argument the Parameters of the current instance
+     * @param {Parameters} parameters
+     */
     constructor(parameters) {
         this.#binNodeCounter = new BinNodeCounter(parameters);
         this.#vertexCounter = new VertexCounter();
@@ -16,6 +20,11 @@ class Counters {
         this.#genericCounters = {};
     }
 
+    /**
+     * Returns the generic counter with this name, if it does not exist creates it
+     * @param {String} name 
+     * @returns {GenericCounter}
+     */
     getGenericCounter = (name) => {
         if (!this.#genericCounters[name]) {
             this.#genericCounters[name] = new GenericCounter();
@@ -24,18 +33,31 @@ class Counters {
         return this.#genericCounters[name];
     }
 
+    /**
+     * Returns a dict with all generic counters
+     * @returns {Object}
+     */
     getGenericCounters = () => {
         return this.#genericCounters;
     }
 
+    /**
+     * @returns {BinNodeCounter}
+     */
     getBinNodeCounter = () => {
         return this.#binNodeCounter;
     }
 
+    /**
+     * @returns {VertexCounter}
+     */
     getVertexCounter = () => {
         return this.#vertexCounter;
     }
 
+    /**
+     * @returns {MblockCounter}
+     */
     getMblockCounter = () => {
         return this.#mblockCounter;
     }

@@ -1,20 +1,18 @@
 import * as twgl from 'twgl.js';
-const m4 = twgl.m4;
 const v3 = twgl.v3;
 import Tile from '../drawableShapes/Tile.js'
 import Raster from '../Raster.js';
-import Quadtree from './Quadtree.js';
 
 class QuadtreeNode {
 
     /**
      * @param {Raster} raster
-     * @param {*} centerHeight 
-     * @param {*} centerWidth
+     * @param {Number} centerHeight 
+     * @param {Number} centerWidth
      * @param {Number} x used for loading tile
      * @param {Number} y used for loading tile
-     * @param {*} sideLength 
-     * @param {*} lod 
+     * @param {Number} sideLength 
+     * @param {Number} lod 
      * @param {Quadtree} tree 
      * @param {QuadtreeNode} parent 
      */
@@ -50,6 +48,10 @@ class QuadtreeNode {
         this.tile = undefined;
     }
 
+    /**
+     * Add this node at the start of the provided list and remove from current list
+     * @param {NodeList} list 
+     */
     addFirstToList = (list) => {
         if (this.list) {
             this.removeFromCurrentList();
@@ -69,6 +71,10 @@ class QuadtreeNode {
         list.increaseSize();
     }
 
+    /**
+     * Add this node at the start of the provided list assuming it is a future list and remove from current list if current list is not the render list
+     * @param {NodeList} list 
+     */
     addFirstToFutureList = (list) => {
         if (this.list && this.list !== this.tree.renderList) {
             this.removeFromCurrentList();
@@ -87,6 +93,9 @@ class QuadtreeNode {
         list.increaseSize();
     }
 
+    /**
+     * Remove node from the current list
+     */
     removeFromCurrentList = () => {
         if (this.list === undefined) {
             return;
@@ -111,6 +120,9 @@ class QuadtreeNode {
         return this;
     }
 
+    /**
+     * Remove node from the future list
+     */
     removeFromFutureList = () => {
         if (this.futureList === undefined) {
             return;
@@ -135,36 +147,51 @@ class QuadtreeNode {
         return this;
     }
 
+    /**
+     * Set prev element in list
+     * @param {QuadtreeNode} prev 
+     */
     updatePrev = (prev) => {
         this.prev = prev;
     }
 
-    updateFuturePrev = (futurePrev) => {
-        this.futurePrev = futurePrev;
+    /**
+     * Set prev element in future list
+     * @param {QuadtreeNode} prev 
+     */
+    updateFuturePrev = (prev) => {
+        this.futurePrev = prev;
     }
 
+    /**
+     * Set next in list
+     * @param {QuadtreeNode} next 
+     */
     updateNext = (next) => {
         this.next = next;
     }
 
-    updateFutureNext = (futureNext) => {
-        this.futureNext = futureNext;
+    /**
+     * Set next in future list
+     * @param {QuadtreeNode} next 
+     */
+    updateFutureNext = (next) => {
+        this.futureNext = next;
     }
 
+    /**
+     * Returns the center position of the node
+     * @returns {Array.<Number>}
+     */
     getCenter = () => {
         return v3.create(this.centerWidth, this.centerHeight, 0.0);
     }
 
+    /**
+     * Add patch to draw in the future
+     * @param {BinTreeNode} node 
+     */
     addPatchToDraw = (node) => {
-        if (this.patchesToDraw.indexOf(node) < 0) {
-            this.patchesToDraw.push(node)
-        }
-        if (this.list !== this.tree.renderList) {
-            this.addFirstToList(this.tree.renderList);
-        }
-    }
-
-    addFuturePatchToDraw = (node) => {
         if (this.futurePatchesToDraw.indexOf(node) < 0) {
             this.futurePatchesToDraw.push(node);
         }
@@ -177,22 +204,11 @@ class QuadtreeNode {
         }
     }
 
+    /**
+     * Remove the provided node from the future list
+     * @param {BinTreeNode} node 
+     */
     removePatchToDraw = (node) => {
-        let index = this.patchesToDraw.indexOf(node);
-        if (index >= 0) {
-            this.patchesToDraw.splice(index, 1);
-        }
-
-        if (this.patchesToDraw.length == 0) {
-            if (this.list === this.tree.renderList && this.futureList === undefined) {
-                this.addFirstToList(this.tree.onGPUList);
-            } else {
-                this.removeFromCurrentList();
-            }
-        }
-    }
-
-    removeFuturePatchToDraw = (node) => {
         let index = this.futurePatchesToDraw.indexOf(node);
         let prevLength = this.futurePatchesToDraw.length;
         if (index >= 0) {
@@ -207,22 +223,38 @@ class QuadtreeNode {
         }
     }
 
+    /**
+     * Return the current patches to Draw, then reset
+     * @returns {Array.<BinTreeNode>}
+     */
     resetPatchesToDraw = () => {
         let res = this.patchesToDraw;
         this.patchesToDraw = [];
         return res;
     }
 
+    /**
+     * Return the future patches to Draw, then reset
+     * @returns {Array.<BinTreeNode>}
+     */
     resetFuturePatchesToDraw = () => {
         let res = this.futurePatchesToDraw;
         this.futurePatchesToDraw = [];
         return res;
     }
 
+    /**
+     * Set the entire patches to draw array
+     * @param {Array.<BintreeNode>} patches 
+     */
     setPatchesToDraw = (patches) => {
         this.patchesToDraw = patches;
     }
 
+    /**
+     * Create the upper left child of this node if it hasn't been created yet
+     * @returns {QuadtreeNode}
+     */
     createUpperLeftChild = () => {
         if (!this.upperLeftChild) {
             let center = this.getUpperLeftCenter()
@@ -241,6 +273,10 @@ class QuadtreeNode {
         return this.upperLeftChild;
     }
 
+    /**
+     * Create the upper right child of this node if it hasn't been created yet
+     * @returns {QuadtreeNode}
+     */
     createUpperRightChild = () => {
         if (!this.upperRightChild) {
             let center = this.getUpperRightCenter()
@@ -259,6 +295,10 @@ class QuadtreeNode {
         return this.upperRightChild;
     }
 
+    /**
+     * Create the lower left child of this node if it hasn't been created yet
+     * @returns {QuadtreeNode}
+     */
     createLowerLeftChild = () => {
         if (!this.lowerLeftChild) {
             let center = this.getLowerLeftCenter()
@@ -277,6 +317,10 @@ class QuadtreeNode {
         return this.lowerLeftChild;
     }
 
+    /**
+     * Create the lower right child of this node if it hasn't been created yet
+     * @returns {QuadtreeNode}
+     */
     createLowerRightChild = () => {
         if (!this.lowerRightChild) {
             let center = this.getLowerRightCenter()
@@ -295,6 +339,9 @@ class QuadtreeNode {
         return this.lowerRightChild;
     }
 
+    /**
+     * Load the data for this quadtree and create its tile if it hasn't been created yet
+     */
     loadData = () => {
         if (!this.tile) {
             this.tile = new Tile(this.lod, this.x, this.y, this.raster);
@@ -304,10 +351,17 @@ class QuadtreeNode {
         this.tile.loadTextures();
     }
 
+    /**
+     * Returns whether the associated tile exists and is ready
+     * @returns {boolean}
+     */
     isReady = () => {
         return (this.tile && this.tile.isReady());
     }
 
+    /**
+     * Remove the associated tiles data from the GPU and manage the lists
+     */
     unloadData = () => {
         if (this.tile) {
             this.tile.unloadTextures();
@@ -317,6 +371,9 @@ class QuadtreeNode {
         }
     }
 
+    /**
+     * Delete the associated tiles data and remove the node from the current list
+     */
     deleteData = () => {
         if (this.tile) {
             this.tile.deleteData();
@@ -327,7 +384,7 @@ class QuadtreeNode {
     }
 
     /**
-     * 
+     * Draw the associated patches (only color or combined)
      * @param {Camera} camera 
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -340,7 +397,7 @@ class QuadtreeNode {
     }
 
     /**
-     * 
+     * Draw only the pixel position, this is only used for WebGL1 implementations
      * @param {Camera} camera 
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -351,6 +408,10 @@ class QuadtreeNode {
         }
     }
 
+    /**
+     * Return the center of the lower left child
+     * @returns {Array.<Number>}
+     */
     getLowerLeftCenter = () => {
         return [
             this.centerWidth - this.sideLength / 4,
@@ -359,6 +420,10 @@ class QuadtreeNode {
         ]
     }
 
+    /**
+     * Return the center of the lower right child
+     * @returns {Array.<Number>}
+     */
     getLowerRightCenter = () => {
         return [
             this.centerWidth + this.sideLength / 4,
@@ -367,6 +432,10 @@ class QuadtreeNode {
         ]
     }
 
+    /**
+     * Return the center of the upper left child
+     * @returns {Array.<Number>}
+     */
     getUpperLeftCenter = () => {
         return [
             this.centerWidth - this.sideLength / 4,
@@ -375,6 +444,10 @@ class QuadtreeNode {
         ]
     }
 
+    /**
+     * Return the center of the upper right child
+     * @returns {Array.<Number>}
+     */
     getUpperRightCenter = () => {
         return [
             this.centerWidth + this.sideLength / 4,
@@ -382,8 +455,6 @@ class QuadtreeNode {
             0.0
         ]
     }
-
-
 }
 
 export default QuadtreeNode;

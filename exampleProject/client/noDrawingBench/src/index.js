@@ -1,4 +1,4 @@
-import Raster from 'raster-core';
+import {Raster, StandardInputHandler} from 'raster-core';
 import DollyCam from '../../common/DollyCam';
 
 let mainFunction = (config) => {
@@ -24,14 +24,20 @@ let mainFunction = (config) => {
     }
 
     let raster = new Raster(gl, config, config.initialCamera);
-    
+    let inputHandler = new StandardInputHandler(raster);
+
     // Setup Info UI
     const loadingDiv = document.querySelector('#loadingSpinner');
 
+    // Setup legal notice
+    const legalNotice = config.legalNotice || '';
+    const legalNoticeDiv = document.querySelector('#legalNotice');
+    legalNoticeDiv.innerHTML = legalNotice;
+    
     let topDownModeButton = document.querySelector('#topDownMode');
     topDownModeButton.addEventListener('click', () => {
-        raster.getCamera().setTopDownMode(!raster.getCamera().isTopDownMode());
-        if (raster.getCamera().isTopDownMode()) {
+        inputHandler.setTopDownMode(!inputHandler.isTopDownMode());
+        if (inputHandler.isTopDownMode()) {
             topDownModeButton.innerHTML = 'Disable Top Down Mode';
         } else {
             topDownModeButton.innerHTML = 'Enable Top Down Mode';

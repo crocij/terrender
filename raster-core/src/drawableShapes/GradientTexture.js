@@ -1,8 +1,19 @@
 import * as twgl from 'twgl.js';
 
+/**
+ * @type {GradientTexture}
+ */
 let instance;
 
+/**
+ * Singleton containing a gradient texture for coloring based on height
+ */
 class GradientTexture {
+
+    /**
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     * @returns {GradientTexture}
+     */
     static getGradientTexture(gl) {
         if (!instance) {
             instance = new GradientTexture(gl);
@@ -11,11 +22,17 @@ class GradientTexture {
         return instance;
     }
 
+    /**
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     constructor(gl) {
         this.gl = gl;
         this.setUpTexture()
     }
 
+    /**
+     * Create the texture
+     */
     setUpTexture = () => {
         this.texture = twgl.createTexture(
             this.gl,

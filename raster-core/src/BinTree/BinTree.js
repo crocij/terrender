@@ -8,10 +8,11 @@ import BinTreeNode from "./BinTreeNode";
 class BinTree {
 
     /**
+     * Root Element of the Bintree
      * 
      * @param {Raster} raster 
      * @param {Quadtree} quadTree 
-     * @param {*} boundaries 
+     * @param {Array.<number>} boundaries 
      */
     constructor(raster, quadTree, boundaries) {
         this.raster = raster;
@@ -25,18 +26,33 @@ class BinTree {
         this.geomErrorTree = undefined;
     }
 
-    setGeomErrorTree = (tree) => {
+    /**
+     * Attach an geom error tree to the bintree
+     * @param {Array.<Object>} errorTree 
+     */
+    setGeomErrorTree = (errorTree) => {
         this.clear()
-        this.geomErrorTree = tree;
+        this.geomErrorTree = errorTree;
     }
 
+    /**
+     * Return the root of the attached geom error tree at the index
+     * @param {number} index 
+     * @returns
+     */
     getGeomErrorRootNode = (index) => {
-        if (this.geomErrorTree && this.geomErrorTree.length == 4) {
+        if (this.geomErrorTree && this.geomErrorTree.length > index) {
             return this.geomErrorTree[index];
         }
         return undefined;
     }
 
+    /**
+     * Update the bintree with the new camera parameters and initialize the roots if necessary.
+     * Based on the parameters, either a depth first recursive update is executed or a breadth first dynamic update that can stop preliminary
+     * @param {Camera} camera 
+     * @param {boolean} cameraHasChanged 
+     */
     update = (camera, cameraHasChanged) => {
         if (this.children.length == 0) {
             this.children = [];
@@ -81,13 +97,23 @@ class BinTree {
         } else {
             this.recursiveUpdate(camera);
         }
-        
     }
 
+    /**
+     * Depth first update of the bintree
+     * Use @see update
+     * @param {Camera} camera 
+     */
     recursiveUpdate = (camera) => {
         this.children.forEach(child => child.recursiveEvaluate(camera));
     }
 
+    /**
+     * Breadth first update of the bintree that stops early if too much mblocks are missing
+     * Use @see update
+     * @param {Camera} camera 
+     * @param {boolean} cameraHasChanged 
+     */
     dynamicUpdate = (camera, cameraHasChanged) => {
         let toEvaluate = [];
         let currentMblockLod = 0;
@@ -103,7 +129,7 @@ class BinTree {
             if (current.mblock.lod !== currentMblockLod) {
 
                 // Based on the ratio between currently ready mblocks and not ready ones.
-                // Only apply if the number of rendered mblocks would not differ too much to avoid the popin of low resolution textures
+                // Only apply if the number of rendered mblocks would not differ too much to avoid the pop in of low resolution textures
                 if (cameraHasChanged && this.quadTree.futureList.size / this.quadTree.renderList.size > this.raster.getParameters().dynamicBinTreeUpdateTreeLengthRatio) {
                     let nrNotReadyBlocks = 0;
                     let iterator = this.quadTree.futureList.first;

@@ -38,7 +38,7 @@ class GlInfo {
 
     /**
      * 
-     * @param {WebGLRenderingContext} gl 
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
      */
     constructor(gl) {
         this.#gl = gl;
@@ -76,32 +76,56 @@ class GlInfo {
 
     /**
      * 
-     * @returns {WebGLRenderingContext}
+     * @returns {WebGLRenderingContext|WebGL2RenderingContext}
      */
     getGl = () => {
         return this.#gl;
     }
-
+    
+    /**
+     * 
+     * @returns {twgl.ProgramInfo}
+     */
     getColorShader = () => {
         return this.#colorShader;
     }
 
+    /**
+     * 
+     * @returns {twgl.ProgramInfo}
+     */
     getCombinedShader = () => {
         return this.#combinedShader;
     }
 
+    /**
+     * 
+     * @returns {twgl.ProgramInfo}
+     */
     getPixelPosShader = () => {
         return this.#pixelPosShader;
     }
 
+    /**
+     * 
+     * @returns {twgl.ProgramInfo}
+     */
     getFrustumShader = () => {
         return this.#frustumShader;
     }
 
+    /**
+     * 
+     * @returns {Boolean}
+     */
     isWebGL2 = () => {
         return this.#isWebGL2;
     }
 
+    /**
+     * Set the render target 
+     * @param {String} target 
+     */
     setCanvasRenderTarget = (target) => {
         if (target &&
             target !== GlInfo.COLOR_RENDER_TARGET &&
@@ -115,22 +139,41 @@ class GlInfo {
         this.#canvasRenderTarget = target;
     }
 
+    /**
+     * 
+     * @returns {Boolean}
+     */
     isColorCanvasRenderTarget = () => {
         return this.#canvasRenderTarget === GlInfo.COLOR_RENDER_TARGET;
     }
 
+    /**
+     * 
+     * @returns {Boolean}
+     */
     isPixelPosCanvasRenderTargetX = () => {
         return this.#canvasRenderTarget === GlInfo.PIXEL_POS_RENDER_TARGETX;
     }
 
+    /**
+     * 
+     * @returns {Boolean}
+     */
     isPixelPosCanvasRenderTargetY = () => {
         return this.#canvasRenderTarget === GlInfo.PIXEL_POS_RENDER_TARGETY;
     }
 
+    /**
+     * 
+     * @returns {Boolean}
+     */
     isCombinedCanvasRenderTarget = () => {
         return this.#canvasRenderTarget === GlInfo.COMBINED_RENDER_TARGET;
     }
 
+    /**
+     * Recreate the color render target if the dimension of the canvas changed
+     */
     recreateColorRenderTarget = () => {
         if (this.#gl.canvas.height === this.#prevColorHeight && this.#gl.canvas.width === this.#prevColorWidth) {
             return;
@@ -161,6 +204,9 @@ class GlInfo {
         this.#gl.framebufferRenderbuffer(this.#gl.FRAMEBUFFER, this.#gl.DEPTH_ATTACHMENT, this.#gl.RENDERBUFFER, depthBuffer);
     }
 
+    /**
+     * Recreate the combined render targets if the canvas size changed and the webGL version is 2
+     */
     recreateCombinedRenderTargets = () => {
         if (!this.#isWebGL2) {
             console.warn('Multiple Target Textures are only supported in WebGL2')
@@ -175,7 +221,7 @@ class GlInfo {
 
         this.#gl.bindFramebuffer(this.#gl.FRAMEBUFFER, this.#combinedRenderTarget);
 
-        // Create Colour
+        // Create Color
         if (this.#gl.canvas.height !== this.#prevColorHeight || this.#gl.canvas.width !== this.#prevColorWidth || !this.#colorTexture) {
             this.#prevColorHeight = this.#gl.canvas.height;
             this.#prevColorWidth = this.#gl.canvas.width;
@@ -230,11 +276,17 @@ class GlInfo {
         this.#gl.framebufferRenderbuffer(this.#gl.FRAMEBUFFER, this.#gl.DEPTH_ATTACHMENT, this.#gl.RENDERBUFFER, depthBuffer);
     }
 
+    /**
+     * Recreate the pixel position render targets when the canvas size changed
+     */
     recreatePixelPosRenderTarget = () => {
         this.recreatePixelPosRenderTargetX();
         this.recreatePixelPosRenderTargetY();
     }
 
+    /**
+     * Recreate the X pixel position render target when the canvas size changed
+     */
     recreatePixelPosRenderTargetX = () => {
         if (this.#gl.canvas.height === this.#prevPixelPosHeightX && this.#gl.canvas.width === this.#prevPixelPosWidthX && this.#pixelPosRenderTargetX) {
             return;
@@ -265,6 +317,9 @@ class GlInfo {
         this.#gl.framebufferRenderbuffer(this.#gl.FRAMEBUFFER, this.#gl.DEPTH_ATTACHMENT, this.#gl.RENDERBUFFER, depthBuffer);
     }
 
+    /**
+     * Recreate the Y pixel position render target when the canvas size changed
+     */
     recreatePixelPosRenderTargetY = () => {
         if (this.#gl.canvas.height === this.#prevPixelPosHeightY && this.#gl.canvas.width === this.#prevPixelPosWidthY && this.#pixelPosRenderTargetY) {
             return;
@@ -295,30 +350,51 @@ class GlInfo {
         this.#gl.framebufferRenderbuffer(this.#gl.FRAMEBUFFER, this.#gl.DEPTH_ATTACHMENT, this.#gl.RENDERBUFFER, depthBuffer);
     }
 
+    /**
+     * @returns {WebGLFramebuffer|null}
+     */
     getColorRenderTarget = () => {
         return this.#canvasRenderTarget === GlInfo.COLOR_RENDER_TARGET ? null : this.#colorRenderTarget;
     }
 
+    /**
+     * @returns {WebGLFramebuffer|null}
+     */
     getCombinedRenderTarget = () => {
         return this.#combinedRenderTarget;
     }
 
+    /**
+     * @returns {WebGLFramebuffer|null}
+     */
     getPixelPosRenderTargetX = () => {
         return this.#canvasRenderTarget === GlInfo.PIXEL_POS_RENDER_TARGETX ? null : this.#pixelPosRenderTargetX;
     }
 
+    /**
+     * @returns {WebGLFramebuffer|null}
+     */
     getPixelPosRenderTargetY = () => {
         return this.#canvasRenderTarget === GlInfo.PIXEL_POS_RENDER_TARGETY ? null : this.#pixelPosRenderTargetY;
     }
 
+    /**
+     * @returns {WebGLTexture|null}
+     */
     getColorTexture = () => {
         return this.#colorTexture;
     }
 
+    /**
+     * @returns {WebGLTexture|null}
+     */
     getPixelPosTextureX = () => {
         return this.#pixelPosTextureX;
     }
 
+    /**
+     * @returns {WebGLTexture|null}
+     */
     getPixelPosTextureY = () => {
         return this.#pixelPosTextureY;
     }

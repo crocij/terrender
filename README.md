@@ -32,7 +32,8 @@ Note that the default parameters are fit for the world dataset
 - ```server.type``` Either ```'expert'```, ```'standard'``` or ```'minimal'```. Controls the set of settings the user has in the browser. Default: ```'expert'```
 - ```client.tileSideLength``` Side length of a height single height texture. Default: ```257```
 - ```client.boundaries``` Array of the lower left and upper right corner point of the coordinate system. From this parameter the number and position of root mblocks and binTree nodes is derived so the proportions of the siode length of the spanned rectangle should be the same as for the data. Default: ```[-180, -90, 180, 90]```
-- ```client.heightScaling```: Scaling of the height relative to the unit of the ```client.boundaries```. Default: ```0.000025```
+- ```client.heightScaling```: Scaling of the height relative to the unit of the ```client.boundaries```. Default: Calculated from ```client.boundaries``` based on the average latitude.
+- ```verticalExaggeration```Exaggeration factor of the height features during rendering. DEFAULT: ```1``` 
 - ```client.estMaxHeight``` Estimated maximum value of the height in the height textures, is used if no geometric bounds are available. Default: ```10000```
 - ```client.xStart``` Start (e.g. lowest) x index of the textures at LOD 0. Default: ```0```
 - ```client.yStart``` Start (e.g. lowest) y index of the textures at LOD 0. Default: ```0```

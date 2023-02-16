@@ -4,18 +4,17 @@ const v3 = twgl.v3;
 
 import QuadtreeNode from "../Quadtree/QuadtreeNode";
 import Raster from '../Raster';
-import Camera from '../Utils/Camera';
 
 class BinTreeNode {
 
     /**
-     * 
+     * Constructor of a bintree node
      * @param {Raster} raster Raster
-     * @param {Number} type 
-     * @param {Array} refinementPoint 
+     * @param {Number} type Type of node
+     * @param {Array.<Number>} refinementPoint Global coordinates of the refinement point (e.g. center of hypotenuse)
      * @param {Number} edgeLength The not hypotenuse side length
      * @param {Number} lod Lod in the BinTree (increases by one with every step)
-     * @param {QuadtreeNode} mblock
+     * @param {QuadtreeNode} mblock mBlock the node is associated with
      * @param {Array} offsetMblock Offset within the mblock
      * @param {Object} geomErrorNode Matching node in the geom error tree, if node has no children forwards same node on split
      */
@@ -29,18 +28,21 @@ class BinTreeNode {
         this.lod = lod;
         this.mblock = mblock;
         this.offsetMblock = offsetMblock;
-        this.determineMblockCenterPoint(type, edgeLength, refinementPoint);
         this.children = [];
         this.geomErrorNode = geomErrorNode;
         this.isEntirelyInFrustum = false;
     }
 
-    // Fill up like the 0 lod mblock, then as usual are higher mblocks required
+    /**
+     * @type {boolean} Do the children of this bintree node lay in a new mblock
+     */
     get newMblock() {
         return this.lod % 2 == 0 && (this.lod >= this.raster.getParameters().lodsFirstMblock);
     }
 
-    // Returns the current depth in the current mblock. It is the same for two consecutive lods
+    /**
+     * @type {Number} The depth in the current mblock. It is the same for two consecutive lods
+     */
     get currentDepthInMblock() {
         if (this.lod <= this.raster.getParameters().lodsFirstMblock) {
             return Math.floor(this.lod / 2);
@@ -55,6 +57,9 @@ class BinTreeNode {
         }
     }
 
+    /**
+     * @type {number} The numerical displacement of the children in the current mblock
+     */
     get childDisplacementInCurrentMblock() {
 
         // The current tile is a topLeft and similar, the anchor point within textures does not change for the children
@@ -65,6 +70,9 @@ class BinTreeNode {
         return 0.5 / Math.pow(2, this.currentDepthInMblock + 1);
     }
 
+    /**
+     * @type {Array.<Number>} The rotation matrix of this bintree node in the associated mblock
+     */
     get typeRotationMatrix() {
         switch (this.type) {
             case BinTreeNode.LEFT:
@@ -84,6 +92,9 @@ class BinTreeNode {
         }
     }
 
+    /**
+     * @type {Array.<Number>} Transformation matrix to position the bintree node in the mblock
+     */
     get coordTransformationMatrix() {
         if (!this._coordTransformationMatrix) {
             this._coordTransformationMatrix = m4.identity();
@@ -98,6 +109,9 @@ class BinTreeNode {
         return this._coordTransformationMatrix;
     }
 
+    /**
+     * @type {Object} Error node of the first child
+     */
     get firstChildGeomErrorNode() {
         if (this.geomErrorNode) {
             if (this.geomErrorNode.c && this.geomErrorNode.c.length == 2) {
@@ -107,7 +121,10 @@ class BinTreeNode {
         }
         return undefined;
     }
-
+    
+    /**
+     * @type {Object} Error node of the second child
+     */
     get secondChildGeomErrorNode() {
         if (this.geomErrorNode) {
             if (this.geomErrorNode.c && this.geomErrorNode.c.length == 2) {
@@ -118,42 +135,26 @@ class BinTreeNode {
         return undefined;
     }
 
-    determineMblockCenterPoint = (type, edgeLength, refinementPoint) => {
-
-        // TODO: This is wrong, the edge lenth is not hypotenuse
-        switch (type) {
-            case BinTreeNode.LEFT:
-                this.mblockCenterPoint = [...refinementPoint];
-                this.mblockCenterPoint[0] += edgeLength / 2;
-                break;
-            case BinTreeNode.TOP:
-                this.mblockCenterPoint = [...refinementPoint];
-                this.mblockCenterPoint[1] -= edgeLength / 2;
-                break;
-            case BinTreeNode.RIGHT:
-                this.mblockCenterPoint = [...refinementPoint];
-                this.mblockCenterPoint[0] -= edgeLength / 2;
-                break;
-            case BinTreeNode.BOTTOM:
-                this.mblockCenterPoint = [...refinementPoint];
-                this.mblockCenterPoint[1] += edgeLength / 2;
-                break;
-            default:
-                this.mblockCenterPoint = [...refinementPoint];
-        }
-    }
-
+    /**
+     * Deactivate the current mblock and all its children
+     */
     deactivate = () => {
-        this.mblock.removeFuturePatchToDraw(this);
+        this.mblock.removePatchToDraw(this);
         this.children.map(child => child.deactivate());
     }
 
-    // TODO: Prep mBlock so we can register with offset
+    /**
+     * Evaluate method for the dynamic update approach (@see BinTree.update)
+     * Adds the current node as to render and removes the parent node from rendering. Evaluates whether the current node need to be split.
+     * The node is set active regardless of splitting or not to work with the dynamic update
+     * @param {Camera} camera 
+     * @returns {Array.<BinTreeNode>} Array of the children. Empty when this node is leaf node
+     */
     evaluate = (camera) => {
         let res;
 
-        this.parent && this.parent.mblock.removeFuturePatchToDraw(this.parent);
-        this.mblock.addFuturePatchToDraw(this);
+        this.parent && this.parent.mblock.removePatchToDraw(this.parent);
+        this.mblock.addPatchToDraw(this);
 
         if (this.errorFunction(camera)) {
             if (this.children.length == 0) {
@@ -172,22 +173,31 @@ class BinTreeNode {
         return res;
     }
 
+    /**
+     * Evaluation method for the recursive depth first bintree update (@see Bintree.update)
+     * @param {Camera} camera 
+     */
     recursiveEvaluate = (camera) => {
         if (this.errorFunction(camera)) {
             if (this.children.length == 0) {
                 this.split();
             }
-            this.mblock.removeFuturePatchToDraw(this);
+            this.mblock.removePatchToDraw(this);
             this.children.forEach(child => child.isEntirelyInFrustum = this.isEntirelyInFrustum)
             this.children.forEach(child => child.recursiveEvaluate(camera));
         } else {
             if (this.children.length !== 0) {
                 this.children.forEach(child => child.deactivate());
             }
-            this.mblock.addFuturePatchToDraw(this);
+            this.mblock.addPatchToDraw(this);
         }
     }
 
+    /**
+     * Returns true if the combined error of the error functions is above the threshold specified in the params, false otherwise
+     * @param {Camera} camera 
+     * @returns {boolean} Is the value of the error metric above the threshold
+     */
     errorFunction = (camera) => {
         if (this.lod == this.raster.getParameters().maxBinLod) {
             return false;
@@ -219,13 +229,20 @@ class BinTreeNode {
         return error > this.raster.getParameters().errorThreshold;
     }
 
+    /**
+     * Derives the geometric error from the attached geometry error node. Minimum returned value is the specified height scaling as to avoid low texture quality in flat areas
+     * @returns {Number}
+     */
     calculateGeomError = () => {
         if (!this.geomErrorNode || !this.geomErrorNode.b || this.geomErrorNode.b.length != 2) {
-            return this.raster.getParameters().heightScaling * 1.0;
+            return this.raster.getParameters().heightScaling;
         }
 
         let bounds = this.geomErrorNode.b;
-        return Math.max(this.raster.getParameters().heightScaling * (bounds[1] - bounds[0]), this.raster.getParameters().heightScaling * 1.0);
+        return Math.max(
+            this.raster.getParameters().heightScaling * (bounds[1] - bounds[0]), 
+            this.raster.getParameters().heightScaling
+        );
     }
 
     /**
@@ -236,7 +253,7 @@ class BinTreeNode {
      * rat: Origin at the lower right point of the lower triangle that is defined by the diagonal line segment to check
      * con: Origin at the corner to check
      * @param {Camera} camera 
-     * @returns 
+     * @returns {Number}
      */
     calculateOctohedronDistance = (camera) => {
         let ref_mirroredPoint = this.mirrorPointIntoFirstQuadrant(this.translatePointToRefinement(camera.position));
@@ -338,9 +355,15 @@ class BinTreeNode {
         if (this.raster.getParameters().useMinMaxForErrors && this.geomErrorNode && this.geomErrorNode.b && this.geomErrorNode.b.length == 2) {
 
             //TODO: Should we increase this bounds?
-            heightBound = [this.raster.getParameters().heightScaling * this.geomErrorNode.b[0], this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]]
+            heightBound = [
+                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[0],
+                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]
+            ]
         } else {
-            heightBound = [0, Math.max(this.edgeLength * 2, this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)];
+            heightBound = [
+                0,
+                Math.max(this.edgeLength * 2, this.raster.getParameters().verticalExaggeration * this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)
+            ];
         }
 
         // Check third dimension
@@ -375,7 +398,7 @@ class BinTreeNode {
      * Calculates the culling error
      * First transform vertices of octohedron to cam space, 
      * then see for all clipping planes some vertex is on the correct side.
-     * If for all clipping planes all vertices are inside also child octohedrons are entirely in frustum
+     * If for all clipping planes all vertices are inside also child octahedrons are entirely in frustum
      * @param {Camera} camera 
      */
     calculateCullingError = (camera) => {
@@ -387,11 +410,13 @@ class BinTreeNode {
         let minMaxBounds;
         if (this.geomErrorNode && this.geomErrorNode.b && this.geomErrorNode.b.length == 2) {
             minMaxBounds = [
-                this.raster.getParameters().heightScaling * this.geomErrorNode.b[0],
-                this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]
+                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[0],
+                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]
             ];
         } else {
-            minMaxBounds = [0, Math.max(this.edgeLength * 2, this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)];
+            minMaxBounds = [
+                0, 
+                Math.max(this.raster.getParameters().verticalExaggeration *this.edgeLength * 2, this.raster.getParameters().verticalExaggeration * this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)];
         }
         let verticesIn2d = [];
         if (this.type < 4) {
@@ -465,7 +490,7 @@ class BinTreeNode {
             ...verticesIn2d.map(vert => [...vert, minMaxBounds[0]]),
             ...verticesIn2d.map(vert => [...vert, minMaxBounds[1]])
         ]
-        
+
         this.isEntirelyInFrustum = true;
         let intersects = true;
 
@@ -551,7 +576,7 @@ class BinTreeNode {
     }
 
     /**
-     * 
+     * Translate point to new origin
      * @param {Number[]} newOrigin 
      * @param {Number[]} point 
      */
@@ -562,6 +587,9 @@ class BinTreeNode {
         ]
     }
 
+    /**
+     * Create the children of this node based on this nodes type
+     */
     split = () => {
         switch (this.type) {
             case BinTreeNode.LEFT:
@@ -593,6 +621,9 @@ class BinTreeNode {
         }
     }
 
+    /**
+     * Consider this node as left node when splitting it. @see {split}
+     */
     splitLeft = () => {
         this.children = [];
 
@@ -623,6 +654,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as top node when splitting it. @see {split}
+     */
     splitTop = () => {
         this.children = [];
 
@@ -653,6 +687,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as right node when splitting it. @see {split}
+     */
     splitRight = () => {
         this.children = [];
 
@@ -683,6 +720,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as bottom node when splitting it. @see {split}
+     */
     splitBottom = () => {
         this.children = [];
         let childrenEdgeLength = Math.sqrt(Math.pow(this.edgeLength, 2) * 2) / 2;
@@ -712,7 +752,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
-    // This should be correct
+    /**
+     * Consider this node as top left node when splitting it. @see {split}
+     */    
     splitTopLeft = () => {
         this.children = [];
         let childrenEdgeLength = Math.sqrt(Math.pow(this.edgeLength, 2) * 2) / 2;
@@ -767,6 +809,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOP, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as top right node when splitting it. @see {split}
+     */
     splitTopRight = () => {
         this.children = [];
 
@@ -822,6 +867,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.RIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as bottom right node when splitting it. @see {split}
+     */
     splitBottomRight = () => {
         this.children = [];
 
@@ -877,6 +925,9 @@ class BinTreeNode {
         this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOM, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
+    /**
+     * Consider this node as bottom left node when splitting it. @see {split}
+     */
     splitBottomLeft = () => {
         this.children = [];
 

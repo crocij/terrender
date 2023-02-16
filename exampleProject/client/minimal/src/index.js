@@ -1,4 +1,4 @@
-import Raster from 'raster-core';
+import { Raster, StandardInputHandler } from 'raster-core';
 import Drawing from '../../common/Drawing';
 import DollyCam from '../../common/DollyCam';
 
@@ -14,8 +14,8 @@ let mainFunction = (config) => {
     resizeCallback();
 
     config.getGeomErrorSlug = (lod, kPatchBase) => 'geom/' + lod + '/' + kPatchBase;
-    config.errorCallback = (err) => {console.error(err)};
-    
+    config.errorCallback = (err) => { console.error(err) };
+
     const canvas = document.querySelector("#webGl");
     let gl = canvas.getContext('webgl2');
     let isWebGL2 = true;
@@ -25,9 +25,15 @@ let mainFunction = (config) => {
     }
 
     let raster = new Raster(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(raster);
 
     // Setup Info UI
     const loadingDiv = document.querySelector('#loadingSpinner');
+
+    // Setup legal notice
+    const legalNotice = config.legalNotice || '';
+    const legalNoticeDiv = document.querySelector('#legalNotice');
+    legalNoticeDiv.innerHTML = legalNotice;
 
     // Setup line drawing
     const drawing = new Drawing(raster);
@@ -36,7 +42,7 @@ let mainFunction = (config) => {
     let drawingConfigContainerDiv = document.querySelector('#drawingContainer');
     let enableDrawingButton = document.querySelector('#enableDrawing');
     enableDrawingButton.addEventListener('click', () => {
-        raster.getCamera().setControlActive(!raster.getCamera().isControlActive());
+        inputHandler.setActive(!inputHandler.isActive());
         drawing.setActive(!drawing.isActive);
         drawingConfigContainerDiv.style.visibility = drawing.isActive ? 'visible' : 'hidden';
         if (drawing.isActive) {
@@ -48,8 +54,8 @@ let mainFunction = (config) => {
 
     let topDownModeButton = document.querySelector('#topDownMode');
     topDownModeButton.addEventListener('click', () => {
-        raster.getCamera().setTopDownMode(!raster.getCamera().isTopDownMode());
-        if (raster.getCamera().isTopDownMode()) {
+        inputHandler.setTopDownMode(!inputHandler.isTopDownMode());
+        if (inputHandler.isTopDownMode()) {
             topDownModeButton.innerHTML = 'Disable Top Down Mode';
         } else {
             topDownModeButton.innerHTML = 'Enable Top Down Mode';

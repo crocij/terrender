@@ -1,4 +1,4 @@
-import Raster from 'raster-core';
+import { Raster, StandardInputHandler } from 'raster-core';
 import Chart from 'chart.js/auto';
 import Drawing from '../../common/Drawing';
 import DollyCam from '../../common/DollyCam';
@@ -16,7 +16,7 @@ let mainFunction = (config) => {
 
     config.getGeomErrorSlug = (lod, kPatchBase) => 'geom/' + lod + '/' + kPatchBase;
     config.errorCallback = (err) => { console.error(err) };
-    
+
     const canvas = document.querySelector("#webGl");
     let gl = canvas.getContext('webgl2');
     let isWebGL2 = true;
@@ -26,6 +26,7 @@ let mainFunction = (config) => {
     }
 
     let raster = new Raster(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(raster);
 
     // Setup Config UI 
     let lodCheckbox = document.querySelector('#showLod')
@@ -52,10 +53,19 @@ let mainFunction = (config) => {
     disableUpdateOnCamCheckbox.checked = raster.getParameters().disableUpdateOnCam;
     disableUpdateOnCamCheckbox.addEventListener('change', () => { raster.getParameters().setParam('disableUpdateOnCam', disableUpdateOnCamCheckbox.checked) });
 
+    let verticalExaggerationInput = document.querySelector('#verticalExaggeration');
+    verticalExaggerationInput.value = raster.getParameters().verticalExaggeration;
+    verticalExaggerationInput.addEventListener('change', () => { raster.getParameters().setParam('verticalExaggeration', verticalExaggerationInput.value) });
+
     // Setup Info UI
     const fpsDiv = document.querySelector('#fps');
     const vertexCounterDiv = document.querySelector('#vertexCount');
     const loadingDiv = document.querySelector('#loadingSpinner');
+
+    // Setup legal notice
+    const legalNotice = config.legalNotice || '';
+    const legalNoticeDiv = document.querySelector('#legalNotice');
+    legalNoticeDiv.innerHTML = legalNotice;
 
     // Setup Chart UI
     const loadingChartDiv = document.querySelector('#loadingChart');
@@ -160,8 +170,8 @@ let mainFunction = (config) => {
         return mblockCounter.map((val, index) => index != mblockCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
     }
 
-    const mblocksChartDiv = document.querySelector('#mblocksChart');
-    let mblocksChart = new Chart(mblocksChartDiv, {
+    const mBlocksChartDiv = document.querySelector('#mblocksChart');
+    let mBlocksChart = new Chart(mBlocksChartDiv, {
         type: 'bar',
         data: {
             labels: getMblockChartsLabels(),
@@ -217,7 +227,7 @@ let mainFunction = (config) => {
     let drawingConfigContainerDiv = document.querySelector('#drawingContainer');
     let enableDrawingButton = document.querySelector('#enableDrawing');
     enableDrawingButton.addEventListener('click', () => {
-        raster.getCamera().setControlActive(!raster.getCamera().isControlActive());
+        inputHandler.setActive(!inputHandler.isActive());
         drawing.setActive(!drawing.isActive);
         drawingConfigContainerDiv.style.visibility = drawing.isActive ? 'visible' : 'hidden';
         if (drawing.isActive) {
@@ -229,8 +239,8 @@ let mainFunction = (config) => {
 
     let topDownModeButton = document.querySelector('#topDownMode');
     topDownModeButton.addEventListener('click', () => {
-        raster.getCamera().setTopDownMode(!raster.getCamera().isTopDownMode());
-        if (raster.getCamera().isTopDownMode()) {
+        inputHandler.setTopDownMode(!inputHandler.isTopDownMode());
+        if (inputHandler.isTopDownMode()) {
             topDownModeButton.innerHTML = 'Disable Top Down Mode';
         } else {
             topDownModeButton.innerHTML = 'Enable Top Down Mode';
@@ -259,8 +269,8 @@ let mainFunction = (config) => {
         binNodesChart.data.datasets[0].data = raster.getCounters().getBinNodeCounter().getCounters();
         binNodesChart.update();
 
-        mblocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
-        mblocksChart.update();
+        mBlocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
+        mBlocksChart.update();
     }
 
     // Dolly Cam

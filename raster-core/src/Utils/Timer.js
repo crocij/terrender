@@ -1,4 +1,9 @@
 class MethodTimer {
+
+    /**
+     * @param {String} key Unique for the timer
+     * @param {String} label Pretty name for the timer
+     */
     constructor(key, label) {
         this.accumulatedTime = 0;
         this.counter = 0;
@@ -9,6 +14,9 @@ class MethodTimer {
         this.label = label || key;
     }
 
+    /**
+     * Reset the Timer
+     */
     reset = () => {
         this.accumulatedTime = 0;
         this.counter = 0;
@@ -16,10 +24,21 @@ class MethodTimer {
         this.max = Number.MIN_SAFE_INTEGER;
     }
 
-    getAverageTime = (divisor = 1) => {
-        return this.counter == 0 ? -1 : this.accumulatedTime / (this.counter * divisor);
+    /**
+     * Get the average and scale ut with the specified inverse
+     * @param {Number} inverseScaling 
+     * @returns {Number}
+     */
+    getAverageTime = (inverseScaling = 1) => {
+        return this.counter == 0 ? -1 : this.accumulatedTime / (this.counter * inverseScaling);
     }
 
+    /**
+     * Execute the method synchronously, measure the time for the execution and return the result of the method
+     * @param {Function} method 
+     * @param  {...any} methodArguments 
+     * @returns {any}
+     */
     measureTime = (method, ...methodArguments) => {
         let startTime = Date.now();
         let result = method(...methodArguments);
@@ -32,11 +51,19 @@ class MethodTimer {
         return result;
     }
 
+    /**
+     * Check if the specified duration is a new min or max, if so set it
+     * @param {Number} duration 
+     */
     checkMinMax = (duration) => {
         this.min = Math.min(duration, this.min);
         this.max = Math.max(duration, this.max);
     }
 
+    /**
+     * Add a manual measurement
+     * @param {Number} duration 
+     */
     addManualMeasurement = (duration) => {
         if (duration == undefined) {
             return;
@@ -47,6 +74,10 @@ class MethodTimer {
         this.checkMinMax(duration);
     }
 
+    /**
+     * @inheritdoc
+     * @returns {String}
+     */
     toString = () => {
         return this.label + ' Avg: ' + this.getAverageTime() +'ms; Min: ' + this.min + 'ms; Max: ' + this.max + 'ms';
     }
@@ -57,6 +88,9 @@ class Timer {
         this.timer = {};
     }
 
+    /**
+     * Reset all timers
+     */
     reset = () => {
         Object.keys(this.timer).forEach(key => {
             let currentTimer = this.timer[key];
@@ -64,6 +98,13 @@ class Timer {
         });
     }
 
+    /**
+     * Creates a new Timer
+     *
+     * @param {String} key Unique for the timer
+     * @param {String} label Pretty name for the timer
+     * @returns {Timer}
+     */
     addTimer = (key, label) => {
         if (!this.timer[key]) {
             this.timer[key] = new MethodTimer(key, label);
@@ -71,10 +112,19 @@ class Timer {
         return this.timer[key];
     }
 
+    /**
+     * Get the timer specified by the key
+     * 
+     * @param {String} key 
+     * @returns {Timer|null}
+     */
     getTimer = (key) => {
         return this.timer[key];
     }
 
+    /**
+     * Write the timers to console
+     */
     writeAverageTimingsToConsole = () => {
         console.log('-----------------------------')
         console.log('Current Timings:')

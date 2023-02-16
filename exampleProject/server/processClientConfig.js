@@ -6,7 +6,6 @@ const processClientConfig = (conf) => {
         tileSideLength: 257,
         boundaries: [-180, -90, 180, 90],
         estMaxHeight: 10000,
-        heightScaling: 0.000025,
         xStart: 0,
         yStart: 0,
         maxLod: 7,
@@ -38,13 +37,6 @@ const processClientConfig = (conf) => {
     if (!clientConfig.initialCamera) {
         clientConfig.initialCamera = {}
     }
-
-    clientConfig.initialCamera = Object.assign({
-        pos: [(clientConfig.boundaries[0] + clientConfig.boundaries[2]) / 2, clientConfig.boundaries[3], clientConfig.estMaxHeight * clientConfig.heightScaling * 4],
-        target: [(clientConfig.boundaries[0] + clientConfig.boundaries[2]) / 2, clientConfig.boundaries[3] - clientConfig.estMaxHeight * clientConfig.heightScaling * 12, 0],
-        up: [0, 0, 1],
-        sensitivity: 0.5
-    }, clientConfig.initialCamera);
 
     if (clientConfig.dollyCam && clientConfig.dollyCam.length > 0) {
         clientConfig.initialCamera = Object.assign(clientConfig.initialCamera, clientConfig.dollyCam[0]);

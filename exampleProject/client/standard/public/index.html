@@ -3,175 +3,19 @@
 <head>
     <meta charset="utf8">
     <title>Terrender</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: monospace;
-        }
-
-        #webGl {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            height: calc(var(--vh, 1vh) * 100);
-        }
-
-        #controlContainer {
-            position: absolute;
-            padding: 5px;
-            right: 10px;
-            top: 0px;
-            bottom: 0px;
-            margin-top: auto;
-            margin-bottom: auto;
-            width: max-content;
-            justify-content: flex-start;
-            align-items: center;
-            display: flex;
-            flex-direction: column;
-            z-index: 2;
-            background-color: white;
-            height: max-content;
-            max-height: 80vh;
-            max-height: calc(var(--vh, 1vh) * 80);
-            overflow-y: scroll;
-        }
-
-        #chartContainer {
-            position: absolute;
-            padding: 5px;
-            top: 0px;
-            left: 10px;
-            bottom: 0px;
-            margin-top: auto;
-            margin-bottom: auto;
-            width: max-content;
-            height: max-content;
-            max-height: 80vh;
-            max-height: calc(var(--vh, 1vh) * 80);
-            max-width: 20vw;
-            overflow-y: scroll;
-            justify-content: flex-start;
-            align-items: center;
-            display: flex;
-            flex-direction: column;
-            z-index: 2;
-            background-color: white;
-        }
-
-        #buttonContainer {
-            position: absolute;
-            padding: 5px;
-            top: 10px;
-            left: 0px;
-            right: 0px;
-            margin-left: auto;
-            margin-right: auto;
-            width: max-content;
-            height: max-content;
-            justify-content: flex-start;
-            align-items: center;
-            display: flex;
-            flex-direction: column;
-            z-index: 2;
-            background-color: white;
-        }
-
-        #drawingContainer {
-            position: absolute;
-            padding: 5px;
-            bottom: 10px;
-            left: 0px;
-            right: 0px;
-            margin-left: auto;
-            margin-right: auto;
-            width: max-content;
-            height: max-content;
-            justify-content: flex-start;
-            align-items: center;
-            display: flex;
-            flex-direction: column;
-            z-index: 2;
-            background-color: white;
-        }
-
-        #lineContainer {
-            display: flex;
-            flex-direction: row;
-            margin-top: 2px;
-            margin-bottom: 2px;
-        }
-
-        #maxLod {
-            width: 5em;
-            margin-right: 1em;
-        }
-
-        #kPatchBase {
-            width: 5em;
-            margin-right: 1em;
-        }
-
-        #errorThreshold {
-            width: 10em;
-            margin-right: 1em;
-        }
-
-        #fileError {
-            color: red;
-        }
-
-        @keyframes c-inline-spinner-kf {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .c-inline-spinner,
-        .c-inline-spinner:before {
-            display: inline-block;
-            width: 11px;
-            height: 11px;
-            transform-origin: 50%;
-            border: 2px solid transparent;
-            border-color: black black transparent transparent;
-            border-radius: 50%;
-            content: "";
-            animation: linear c-inline-spinner-kf 900ms infinite;
-            position: relative;
-            vertical-align: inherit;
-            line-height: inherit;
-        }
-
-        .c-inline-spinner {
-            top: 3px;
-            margin: 0 3px;
-        }
-
-        .c-inline-spinner:before {
-            border-color:black black transparent transparent;
-            position: absolute;
-            left: -2px;
-            top: -2px;
-            border-style: solid;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <canvas id="webGl" width="100vw" height="100vh"></canvas>
-    <div id="buttonContainer">
+    <div id="buttonContainer" class="container">
         <button type="button" id="showCharts">Hide Statistics</button>
         <button type="button" id="showControls">Hide Settings</button>
         <button type="button" id="enableDrawing">Enable Drawing</button>
         <button type="button" id="topDownMode">Enable Top Down Mode</button>
         <div id="loadingSpinner"><i class="c-inline-spinner"></i>Loading</div>
     </div>
-    <div id="controlContainer">
+    <div id="controlContainer" class="container">
         <div id="fps"></div>
         <div id="vertexCount"></div>
         <h2>Drawing Behaviour</h1>
@@ -199,8 +43,12 @@
                 <input type="checkbox" id="disableCamUpdate">
                 <label for="renderFlat">Disable Update on Cam Change</label>
             </div>
+            <div id="lineContainer">
+                <input type="number" id="verticalExaggeration">
+                <label for="verticalExaggeration">Vertical Exaggeration</label>
+            </div>
     </div>
-    <div id="chartContainer">
+    <div id="chartContainer" class="container">
         <h1>Statistics</h1>
         <h2>Loading Textures</h2>
         <canvas id="loadingChart"></canvas>
@@ -213,7 +61,7 @@
         <h2>Quadtree Nodes Distribution</h2>
         <canvas id="mblocksChart"></canvas>
     </div>
-    <div id="drawingContainer" style="visibility: hidden;">
+    <div id="drawingContainer" style="visibility: hidden;" class="container">
         <div id="lineContainer">
             <input type="color" id="colorPicker" value="#000000">
             <label for="colorPicker">Color</label>
@@ -235,7 +83,7 @@
         </div>
         <div id="fileError"></div>
     </div>
-    <img id="debug" src="" />
+    <div id="legalNotice"></div>
     <script src="main.js"></script>
 </body>
 

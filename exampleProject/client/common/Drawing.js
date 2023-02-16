@@ -242,6 +242,7 @@ class Drawing {
                 this.createTextures();
                 this.fileErrorDiv.innerHTML = '';
             } catch (err) {
+                console.error(err);
                 this.fileErrorDiv.innerHTML = 'Invalid JSON File'
             }
         };
@@ -691,7 +692,6 @@ class Drawing {
         }
     }
 
-    // TODO: Sporadically this does not work
     isMousePositionOutsideGL1 = (inputX, inputY) => {
         let gl = this.raster.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);
@@ -707,7 +707,6 @@ class Drawing {
         return true;
     }
 
-    // TODO: Sporadically this does not work
     isMousePositionOutsideGL2 = (inputX, inputY) => {
         let gl = this.raster.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);

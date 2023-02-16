@@ -1,13 +1,10 @@
 import Camera from '../Utils/Camera.js';
 import QuadtreeNode from './QuadtreeNode.js';
 
-/**
- * @property {QuadtreeNode} first
- */
 class NodeList {
     /**
      * 
-     * @param {Array[QuadtreeNode]} nodes
+     * @param {Array.<QuadtreeNode>} nodes
      */
     constructor(nodes = []) {
         this.size = 0;
@@ -41,7 +38,7 @@ class Quadtree {
     /**
      * 
      * @param {Raster} raster 
-     * @param {Array[Number]} boundaries in worldspace
+     * @param {Array.<Number>} boundaries in world space
      * @param {Number} x left most x Coordinate for getting data
      * @param {Number} y bottom most y Coordinate for getting data
      */
@@ -80,6 +77,9 @@ class Quadtree {
         this.drawableNodes = [];
     }
 
+    /**
+     * Swap the future and render list
+     */
     swapLists = () => {
         if (this.futureList.size == 0) {
             return;
@@ -104,7 +104,7 @@ class Quadtree {
     }
 
     /**
-     * 
+     * Render the terrain color
      * @param {Camera} camera 
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -122,12 +122,12 @@ class Quadtree {
             node = node.next;
         }
 
-        // Draw View frustum, in camera is checkde whether it is necessary
+        // Draw View frustum, in camera is checked whether it is necessary
         this.raster.getCamera().renderViewFrustum();
     }
 
     /**
-     * 
+     * Draw Color and Coordinates
      * @param {Camera} camera 
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -151,7 +151,7 @@ class Quadtree {
     }
 
     /**
-     * 
+     * Draw Coordinates
      * @param {Camera} camera 
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -174,6 +174,9 @@ class Quadtree {
         }
     }
 
+    /**
+     * Start loading the data for the nodes in the future list
+     */
     loadData = () => {
         let node = this.futureList.first;
         while (node !== undefined) {
@@ -182,11 +185,17 @@ class Quadtree {
         }
     }
 
+    /**
+     * Clean up caches (RAM and GPU)
+     */
     cleanUpUnusedData = () => {
         this.unloadUnusedData();
         this.deleteUnusedData();
     }
 
+    /**
+     * Clean up GPU cache
+     */
     unloadUnusedData = () => {
         while (this.onGPUList.size > this.raster.getParameters().maxGpuCache) {
             let lastNode = this.onGPUList.last;
@@ -194,6 +203,9 @@ class Quadtree {
         }
     }
 
+    /**
+     * Clean up RAM cache
+     */
     deleteUnusedData = () => {
         while (this.onRAMList.size > this.raster.getParameters().maxRamCache) {
             let lastNode = this.onRAMList.last;
@@ -201,6 +213,10 @@ class Quadtree {
         }
     }
 
+    /**
+     * Creates a formatted string with the tile count information
+     * @returns {String}
+     */
     tileCountToString = () => {
         return "Tiles rendered: " + this.renderList.size + "; Tiles idling on GPU: " + this.onGPUList.size + "; Total tiles on GPU: " + (this.renderList.size + this.onGPUList.size) + "; Tiles in RAM: " + this.onRAMList.size;
     }

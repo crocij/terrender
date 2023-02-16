@@ -7,6 +7,7 @@ import LoadingState from './Utils/LoadingState';
 import Timer from './Utils/Timer';
 import Counters from './Utils/Counters';
 import GlInfo from './Utils/GlInfo';
+import StandardInputHandler from './inputHandlers/StandardInputHandler';
 
 class Raster {
     #counters;
@@ -27,12 +28,9 @@ class Raster {
      * @param {object} parameters
      * @param {object} initCamera Initial Camera settings
      */
-    constructor(gl, parameters = {}, initCamera = {}) {
+    constructor(gl, parameters = {}, initCamera) {
         twgl.setDefaults({ textureColor: [0, 0, 0, 1] });
-        this.camInitPos = initCamera.pos || [0, 1, 1];
-        this.camInitTarget = initCamera.target || [2, 1, 0];
-        this.camInitUp = initCamera.up || [0, 0, 1];
-        this.camInitSensitivity = initCamera.sensitivity || 0.5
+        this.initCameraParameters = initCamera;
 
         this.#glInfo = new GlInfo(gl);
         this.#parameters = new Parameters(parameters);
@@ -127,12 +125,26 @@ class Raster {
     }
 
     setupCamera = () => {
+        this.initCameraParameters = Object.assign({
+            pos: [
+                (this.#parameters.boundaries[0] + this.#parameters.boundaries[2]) / 2,
+                (this.#parameters.boundaries[1] + this.#parameters.boundaries[3]) / 2,
+                this.#parameters.estMaxHeight * this.#parameters.heightScaling * 4
+            ],
+            target: [
+                (this.#parameters.boundaries[0] + this.#parameters.boundaries[2]) / 2,
+                this.#parameters.boundaries[3] + this.#parameters.estMaxHeight * this.#parameters.heightScaling * 12,
+                0
+            ],
+            up: [0, 0, 1]
+        }, this.initCameraParameters)
+        
+
         this.#camera = new Camera(
-            this.camInitPos,
-            this.camInitTarget,
-            this.camInitUp,
+            this.initCameraParameters.pos,
+            this.initCameraParameters.target,
+            this.initCameraParameters.up,
             this,
-            { sensitivity: this.camInitSensitivity }
         );
 
         this.#camera.saveViewFrustum();
@@ -335,4 +347,4 @@ class Raster {
     }
 }
 
-export default Raster;
+export {Raster, StandardInputHandler};

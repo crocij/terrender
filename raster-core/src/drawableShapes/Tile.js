@@ -103,11 +103,12 @@ class WorkerCreator {
 const workerCreator = new WorkerCreator();
 
 class Tile {
+
     /**
-     * 
-     * @param {*} lod 
-     * @param {*} xIndex 
-     * @param {*} yIndex 
+     * @constructor
+     * @param {Number} lod 
+     * @param {Number} xIndex 
+     * @param {Number} yIndex 
      * @param {Raster} raster 
      */
     constructor(lod, xIndex, yIndex, raster) {
@@ -142,6 +143,9 @@ class Tile {
         this.createTimers();
     }
 
+    /**
+     * Creates the timers for benchmarks
+     */
     createTimers = () => {
         this.heightFetchTimer = this.timer.addTimer('heightFetch', 'Height Texture Fetching');
         this.heightArrayBufferReadTimer = this.timer.addTimer('heightArrayBufferRead', 'Reading Height Response Array Buffer');
@@ -151,6 +155,9 @@ class Tile {
         this.heightTextureTimer = this.timer.addTimer('heightTexture', 'Prepare Height Texture');
     }
 
+    /**
+     * Start loading the height and color texture if not already available / loading
+     */
     loadTextures = () => {
         if (!this.heightTexture && !this.isLoadingHeight) {
             this.loadHeightTexture();
@@ -161,18 +168,34 @@ class Tile {
         }
     }
 
+    /**
+     * Returns true if the tile is ready to be rendered
+     * @returns {boolean}
+     */
     isReady = () => {
         return  this.heightTexture !== undefined && !this.isLoadingHeight && this.colorTexture !== undefined && !this.isLoadingColor;
     }
-
+    /**
+     * Returns true if height data is ready
+     * @returns {boolean}
+     */
     isHeightReady = () => {
-        return this.heightTexture || this.noHeightTexture || this.heightRawData || this.heightTexElement;
+        return undefined !== (this.heightTexture || this.noHeightTexture || this.heightRawData || this.heightTexElement);
     }
 
+    /**
+     * Returns true if color data is ready
+     * @returns {boolean}
+     */
     isColorReady= () => {
-        return this.colorTexture || this.noColorTexture || this.colorRawData || this.colorTexElem;
+        return undefined !== (this.colorTexture || this.noColorTexture || this.colorRawData || this.colorTexElem);
     }
 
+    /**
+     * Start loading the height texture. Sets loadingHeight to true and back to false if texture loaded
+     * Also handles the global loadingState management regarding the texture.
+     * If no texture is available a fallback zero texture is created.
+     */
     loadHeightTexture = () => {
         if (this.noHeightTexture) {
 
@@ -187,7 +210,6 @@ class Tile {
                     internalFormat: this.gl.R32F,
                 }, (err) => console.error(err));
             } else {
-
                 this.heightTexture = twgl.createTexture(this.gl, {
                     src: [0, 0, 0, 0],
                     width: 1,
@@ -227,6 +249,11 @@ class Tile {
         }
     }
 
+    /**
+     * Start loading the color texture. Sets isLoadingCOlor to true and back to false if texture loaded
+     * Also handles the global loadingState management regarding the texture.
+     * If no texture is available a fallback zero texture is created.
+     */
     loadColorTexture = () => {
         if (this.noColorTexture) {
 
@@ -273,6 +300,12 @@ class Tile {
         }
     }
 
+    /**
+     * Asynchronously loads the color data if it is in tif format
+     * 
+     * @async
+     * @returns {Promise}
+     */
     loadColorTextureTiff = async () => {
         if (this.raster.getParameters().noColorTextures) {
             return;
@@ -330,33 +363,23 @@ class Tile {
             this.colorTextureTimer.addManualMeasurement(Date.now() - overallStarTime);
         }
 
-        if (this.raster.getGlInfo().isWebGL2()) {
-            this.colorTexture = twgl.createTexture(this.gl, {
-                src: this.colorRawData,
-                width: this.colorRasterWidth,
-                height: this.colorRasterHeight,
-                wrap: this.gl.CLAMP_TO_EDGE,
-                minMag: this.gl.LINEAR,
-                format: this.gl.RGB,
-            }, (err) => {
-                err && console.error(err);
-            });
-        } else {
+        this.colorTexture = twgl.createTexture(this.gl, {
+            src: this.colorRawData,
+            width: this.colorRasterWidth,
+            height: this.colorRasterHeight,
+            wrap: this.gl.CLAMP_TO_EDGE,
+            minMag: this.gl.LINEAR,
+            format: this.gl.RGB,
+        }, (err) => {
+            err && console.error(err);
+        });
 
-            this.colorTexture = twgl.createTexture(this.gl, {
-                src: this.colorRawData,
-                width: this.colorRasterWidth,
-                height: this.colorRasterHeight,
-                wrap: this.gl.CLAMP_TO_EDGE,
-                minMag: this.gl.LINEAR,
-                format: this.gl.RGB,
-            }, (err) => {
-                err && console.error(err);
-            });
-        }
         return true;
     }
 
+    /**
+     * Loads the color data if it is not in tif format
+     */
     loadColorTexturePng = () => {
         if (this.raster.getParameters().noColorTextures) {
             return;
@@ -386,6 +409,10 @@ class Tile {
         }
     }
 
+    /**
+     * Asynchronously loads the height data
+     * @returns {Promise}
+     */
     loadHeightTiff = async () => {
         if (this.noHeightTexture) {
             return true;
@@ -458,6 +485,9 @@ class Tile {
         return true;
     }
 
+    /**
+     * Load the height data if it is a png
+     */
     loadHeightPng = () => {
         this.isLoadingHeight = true;
         this.loadingState.registerStartHeight();
@@ -485,6 +515,10 @@ class Tile {
         }
     }
 
+    /**
+     * Workaround for loading height pngs on iOS
+     * @returns {Promise}
+     */
     loadHeightPngIOS = async () => {
         if (this.noHeightTexture) {
             return true;
@@ -534,6 +568,9 @@ class Tile {
         return true;
     }
 
+    /**
+     * Unload the color and height texture
+     */
     unloadTextures = () => {
         if (this.heightTexture) {
             this.gl.deleteTexture(this.heightTexture);
@@ -546,6 +583,9 @@ class Tile {
         }
     }
 
+    /**
+     * Delete the color and height texture entirely
+     */
     deleteData = () => {
         this.unloadTextures();
         if (this.colorTexElem) {
@@ -560,28 +600,48 @@ class Tile {
         this.colorRawData = undefined;
     }
 
+    /**
+     * Rotate this model matrix around the X axis
+     * @param {Number} angle 
+     */
     rotateX = (angle) => {
         this.modelMatrix = m4.rotateX(this.modelMatrix, angle);
     }
 
+    /**
+     * Rotate this model matrix around the Y axis
+     * @param {Number} angle 
+     */
     rotateY = (angle) => {
         this.modelMatrix = m4.rotateY(this.modelMatrix, angle);
     }
 
+    /**
+     * Rotate this model matrix around the Z axis
+     * @param {Number} angle 
+     */
     rotateZ = (angle) => {
         this.modelMatrix = m4.rotateZ(this.modelMatrix, angle);
     }
 
+    /**
+     * Scale this model matrix along the x and y axis
+     * @param {Number} factor 
+     */
     scale = (factor) => {
         this.modelMatrix = m4.scale(this.modelMatrix, v3.create(factor, factor, 1));
     }
 
+    /**
+     * Scale this model matrix aong the x and y axis
+     * @param {Number} factor 
+     */
     translate = (direction) => {
         this.modelMatrix = m4.translate(this.modelMatrix, direction);
     }
 
     /**
-     * 
+     * Draw the patches provided
      * @param {Camera} camera
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -601,7 +661,7 @@ class Tile {
     }
 
     /**
-     * 
+     * Draw a single Patch provided
      * @param {Camera} camera
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
@@ -630,7 +690,7 @@ class Tile {
             isLoadingHeight: this.isLoadingHeight,
             renderUniColor: this.raster.getParameters().renderUniColor,
             uniColor: this.color,
-            heightScaling: this.raster.getParameters().heightScaling,
+            heightScaling: this.raster.getParameters().heightScaling * this.raster.getParameters().verticalExaggeration,
             estMaxHeight: this.raster.getParameters().estMaxHeight,
             modelMatrix: this.modelMatrix,
             ...additionalUniforms,
@@ -665,11 +725,11 @@ class Tile {
     }
 
     /**
-     * 
+     * Draw the pixel position for the provided patches
      * @param {Camera} camera
      * @param {Object} programInfo 
      * @param {Object} additionalUniforms 
-     * @param {BinTreeNode} patch 
+     * @param {Array.<BinTreeNode>} patches
      */
     drawPixelPos = (camera, programInfo, additionalUniforms, patches) => {
         if (this.tileBufferInfo.kPatchBase !== this.raster.getParameters().kPatchBase) {
@@ -680,6 +740,13 @@ class Tile {
         })
     }
 
+    /**
+     * Draw the pixel position for the provided patch
+     * @param {Camera} camera 
+     * @param {Object} additionalUniforms 
+     * @param {Object} programInfo 
+     * @param {BinTreeNode} patch 
+     */
     drawPixelPosPatch = (camera, additionalUniforms, programInfo, patch) => {
         const viewProjectionMatrix = camera.viewProjectionMatrix;
         const mvpMatrix = m4.multiply(viewProjectionMatrix, this.modelMatrix);
@@ -698,7 +765,7 @@ class Tile {
             sideLengthOS: this.sideLengthOS,
             noHeightTexture: this.noHeightTexture || this.isLoadingHeight,
             modelMatrix: this.modelMatrix,
-            heightScaling: this.raster.getParameters().heightScaling,
+            heightScaling: this.raster.getParameters().heightScaling * this.raster.getParameters().verticalExaggeration,
             ...additionalUniforms
         }
 

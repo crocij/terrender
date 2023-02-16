@@ -81,7 +81,7 @@ void main() {
                 float p2y = rgbaToFloat(texture(linesTexture, vec2(indexWidth, 3.5 * offsetHeightLines)));
                 float width = rgbaToFloat(texture(linesTexture, vec2(indexWidth, 4.5 * offsetHeightLines)));
                 if (isOnLine(worldPos, vec2(p1x, p1y), vec2(p2x, p2y), width)) {
-                     color = texture(linesTexture, vec2(indexWidth, 5.5 * offsetHeightLines));
+                    color = texture(linesTexture, vec2(indexWidth, 5.5 * offsetHeightLines));
                     break;
                 }
             }
@@ -89,7 +89,7 @@ void main() {
 
         // Check currently drawn line
         if (renderCurrentLine && isOnLine(worldPos, currentLineP1, currentLineP2, currentLineWidth)) {
-             color = currentLineColor / 255.0;
+            color = currentLineColor / 255.0;
         }
     }
 }

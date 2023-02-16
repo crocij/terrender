@@ -11,15 +11,15 @@ class VertexCounter {
     }
 
     /**
-     * 
-     * @param {Number} numberOfVertices Number of Vertices rendered in this draw call
+     * Add a number of vertices to the counter
+     * @param {Number} num Number of Vertices rendered in this draw call
      */
-    addVertices =(numberOfVertices)  => {
-        this.vertices += numberOfVertices;
+    addVertices =(num)  => {
+        this.vertices += num;
     }
 
     /**
-     * 
+     * Write a prettified string with the number of vertices into the provided HTML Element
      * @param {HTMLElement} div 
      */
     updateVertexDisplay = (div) => {

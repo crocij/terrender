@@ -38,6 +38,6 @@ void main() {
     //     color = vec4(0.0);
     // }
 
-    yCoord = floatToRgba(coord.x);
-    xCoord = floatToRgba(coord.y);
+    xCoord = floatToRgba(coord.x);
+    yCoord = floatToRgba(coord.y);
 }

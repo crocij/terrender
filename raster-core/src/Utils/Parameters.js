@@ -3,7 +3,8 @@ const paramsRequiringRedraw = [
     'renderFlat',
     'renderGeometry',
     'renderKPatchLines',
-    'renderUniColor'
+    'renderUniColor',
+    'verticalExaggeration'
 ];
 
 const paramsRequiringUpdateDataStructures = [
@@ -58,9 +59,20 @@ class Parameters {
         this.getGeomErrorSlug = parameters.getGeomErrorSlug;
         this.useGeomMetric = parameters.useGeomMetric !== undefined ? parameters.useGeomMetric : false;
         this.useMinMaxForErrors = parameters.useMinMaxForErrors || false;
-        this.heightScaling = parameters.heightScaling || 0.000025;
-        this.renderUniColor = parameters.renderUniColor || false;
         this.boundaries = parameters.boundaries || [-180, -90, 180, 90];
+        this.verticalExaggeration = parameters.verticalExaggeration || 1;
+
+        // Calculate height scaling based on the average latitude in the data set
+        this.heightScaling = parameters.heightScaling;
+        if (this.heightScaling === undefined) {
+            let avgLat = (this.boundaries[1] + this.boundaries[3]) / 2;
+            let avgLatRadians = (avgLat / 360) * 2 * Math.PI;
+
+            // 110000 dist of ne degree long at equator (m)
+            let distDegreeLong = Math.cos(avgLatRadians) * 111321;
+            this.heightScaling = 1 / distDegreeLong;
+        }
+        this.renderUniColor = parameters.renderUniColor || false;
         this.xStart = parameters.xStart || 0;
         this.yStart = parameters.yStart || 0;
         this.noColorTextures = parameters.noColorTextures || false;
@@ -77,7 +89,7 @@ class Parameters {
         };
         this.isIOS = (
             (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) ||
-            
+
             // https://stackoverflow.com/questions/57776001/how-to-detect-ipad-pro-as-ipad-using-javascript 
             (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Macintosh/.test(navigator.userAgent)
             ));
@@ -161,7 +173,7 @@ class Parameters {
     shouldReloadGeomError = () => {
         let res = this._shouldReloadGeomError;
         this._shouldReloadGeomError = false;
-        return res; 
+        return res;
     }
 
     shouldSaveViewFrustum = () => {

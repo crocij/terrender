@@ -1,4 +1,4 @@
-import Raster from 'raster-core';
+import {Raster, StandardInputHandler} from 'raster-core';
 import Chart from 'chart.js/auto';
 import Drawing from '../../common/Drawing';
 import DollyCam from '../../common/DollyCam';
@@ -26,6 +26,7 @@ let mainFunction = (config) => {
     }
 
     let raster = new Raster(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(raster);
 
     // Setup Config UI 
     let lodCheckbox = document.querySelector('#showLod')
@@ -52,6 +53,10 @@ let mainFunction = (config) => {
     disableUpdateOnCamCheckbox.checked = raster.getParameters().disableUpdateOnCam;
     disableUpdateOnCamCheckbox.addEventListener('change', () => { raster.getParameters().setParam('disableUpdateOnCam', disableUpdateOnCamCheckbox.checked) });
 
+    let verticalExaggerationInput = document.querySelector('#verticalExaggeration');
+    verticalExaggerationInput.value = raster.getParameters().verticalExaggeration;
+    verticalExaggerationInput.addEventListener('change', () => {raster.getParameters().setParam('verticalExaggeration', verticalExaggerationInput.value)});
+
     let useDistanceMetricCheckbox = document.querySelector('#useDistanceMetric');
     useDistanceMetricCheckbox.checked = raster.getParameters().useDistanceMetric;
     useDistanceMetricCheckbox.addEventListener('change', () => { raster.getParameters().setParam('useDistanceMetric', useDistanceMetricCheckbox.checked) });
@@ -64,7 +69,7 @@ let mainFunction = (config) => {
     useCullingMetricCheckbox.checked = raster.getParameters().useCullingMetric;
     useCullingMetricCheckbox.addEventListener('change', () => { raster.getParameters().setParam('useCullingMetric', useCullingMetricCheckbox.checked) });
 
-    let kpatchBaseDiv = document.querySelector('#kPatchBase');
+    let kPatchBaseDiv = document.querySelector('#kPatchBase');
     for (let i = (raster.getParameters().tileSideLength - 1) / 2; i > 16; i = i / 2) {
         let option = document.createElement('option');
         option.value = i + 1;
@@ -72,10 +77,10 @@ let mainFunction = (config) => {
         if (i + 1 == raster.getParameters().kPatchBase) {
             option.selected = true;
         }
-        kpatchBaseDiv.appendChild(option);
+        kPatchBaseDiv.appendChild(option);
     }
-    kpatchBaseDiv.addEventListener('change', () => {
-        raster.getParameters().setParam('kPatchBase', kpatchBaseDiv.value);
+    kPatchBaseDiv.addEventListener('change', () => {
+        raster.getParameters().setParam('kPatchBase', kPatchBaseDiv.value);
     });
 
 
@@ -106,6 +111,10 @@ let mainFunction = (config) => {
         }
     });
 
+    // Setup legal notice
+    const legalNotice = config.legalNotice || '';
+    const legalNoticeDiv = document.querySelector('#legalNotice');
+    legalNoticeDiv.innerHTML = legalNotice;
 
     // Setup Info UI
     const fpsDiv = document.querySelector('#fps');
@@ -161,8 +170,8 @@ let mainFunction = (config) => {
         }
     })
 
-    const gpuUsgeChartDiv = document.querySelector('#gpuUsageChart');
-    let gpuUsageChart = new Chart(gpuUsgeChartDiv, {
+    const gpuUsageChartDiv = document.querySelector('#gpuUsageChart');
+    let gpuUsageChart = new Chart(gpuUsageChartDiv, {
         type: 'doughnut',
         data: {
             labels: ['Rendering', 'Caching on GPU'],
@@ -215,13 +224,13 @@ let mainFunction = (config) => {
         return mblockCounter.map((val, index) => index != mblockCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
     }
 
-    const mblocksChartDiv = document.querySelector('#mblocksChart');
-    let mblocksChart = new Chart(mblocksChartDiv, {
+    const mBlocksChartDiv = document.querySelector('#mblocksChart');
+    let mBlocksChart = new Chart(mBlocksChartDiv, {
         type: 'bar',
         data: {
             labels: getMblockChartsLabels(),
             datasets: [{
-                label: '# of mblocks currently rendered',
+                label: '# of mBlocks currently rendered',
                 data: raster.getCounters().getMblockCounter().getCounters(),
                 borderWidth: 1,
                 backgroundColor: [
@@ -240,7 +249,7 @@ let mainFunction = (config) => {
         }
     });
 
-    // Setup linedrawing
+    // Setup line drawing
     const drawing = new Drawing(raster);
 
     // Add UI Buttons
@@ -272,7 +281,7 @@ let mainFunction = (config) => {
     let drawingConfigContainerDiv = document.querySelector('#drawingContainer');
     let enableDrawingButton = document.querySelector('#enableDrawing');
     enableDrawingButton.addEventListener('click', () => {
-        raster.getCamera().setControlActive(!raster.getCamera().isControlActive());
+        inputHandler.setActive(!inputHandler.isActive());
         drawing.setActive(!drawing.isActive);
         drawingConfigContainerDiv.style.visibility = drawing.isActive ? 'visible' : 'hidden';
         if (drawing.isActive) {
@@ -284,8 +293,8 @@ let mainFunction = (config) => {
 
     let topDownModeButton = document.querySelector('#topDownMode');
     topDownModeButton.addEventListener('click', () => {
-        raster.getCamera().setTopDownMode(!raster.getCamera().isTopDownMode());
-        if (raster.getCamera().isTopDownMode()) {
+        inputHandler.setTopDownMode(!inputHandler.isTopDownMode());
+        if (inputHandler.isTopDownMode()) {
             topDownModeButton.innerHTML = 'Disable Top Down Mode';
         } else {
             topDownModeButton.innerHTML = 'Enable Top Down Mode';
@@ -320,8 +329,8 @@ let mainFunction = (config) => {
         binNodesChart.data.datasets[0].data = raster.getCounters().getBinNodeCounter().getCounters();
         binNodesChart.update();
 
-        mblocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
-        mblocksChart.update();
+        mBlocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
+        mBlocksChart.update();
     }
 
     raster.setLoadingFinishedCallback(updateMemoryUsageCharts)

@@ -6,11 +6,17 @@ import Raster from '../Raster.js';
 
 let instance;
 
+/**
+ * Singleton containing the vertex buffers to render the different kinds of kPatches
+ */
 class TileBufferInfo {
 
     /**
-     * 
+     * Returns the tile buffer info singleton
      * @param {Raster} raster 
+     * @param {Number} height Height of the mBlock
+     * @param {Number} width Width of the mblock
+     * @param {Number} sideLengthOS Side length of the mBlock in object space
      */
     static getTileBufferInfo = (raster, height, width, sideLengthOS) => {
         if (!instance) {
@@ -21,11 +27,11 @@ class TileBufferInfo {
     }
 
     /**
-     * 
+     * @constructor
      * @param {Raster} raster 
-     * @param {*} height 
-     * @param {*} width 
-     * @param {*} sideLengthOS 
+     * @param {Number} height Height of the mBlock
+     * @param {Number} width Width of the mblock
+     * @param {Number} sideLengthOS Side length of the mBlock in object space
      */
     constructor(raster, height = 2000, width = 2000, sideLengthOS = 1.0) {
         this.raster = raster;
@@ -46,9 +52,8 @@ class TileBufferInfo {
     }
 
     /**
-     * 
-     * @param {WebGLRenderingContext} gl 
-     * @returns 
+     * Recreates the buffers if the kPatchBase changed
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
      */
     recreateBuffers = (gl) => {
         if (this.kPatchBase == this.raster.getParameters().kPatchBase) {
@@ -71,6 +76,10 @@ class TileBufferInfo {
         this.createTopLeftKPatchLinesBufferInfo(gl);
     }
 
+    /**
+     * Creates the left buffer for the geom render mode (e.g. only the outline of the kPatch)
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createLeftGeomBufferInfo = (gl) => {
         if (this.leftGeomBufferInfo) {
             return;
@@ -97,6 +106,10 @@ class TileBufferInfo {
         this.leftGeomBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
 
+    /**
+     * Creates the left kPatch buffer info if does not exist
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createLeftKPatchBufferInfo = (gl) => {
         if (this.leftKPatchBufferInfo) {
             return;
@@ -249,6 +262,10 @@ class TileBufferInfo {
         this.leftKPatchBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
 
+    /**
+     * Creates the left kPatch buffer info if does not exist for rendering in line mode
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createLeftKPatchLinesBufferInfo = (gl) => {
         if (this.leftKPatchLinesBufferInfo) {
             return;
@@ -259,7 +276,7 @@ class TileBufferInfo {
 
         let localSideLength = this.raster.getParameters().kPatchBase * 2 - 1;
 
-        // Note that for the kpatches with the hypothenuse on the border of the mblock the grid is double the size
+        // Note that for the kPatches with the hypotenuse on the border of the mblock the grid is double the size
         for (let y = 0; y < localSideLength; y++) {
             for (let x = 0; x < localSideLength; x++) {
 
@@ -363,7 +380,10 @@ class TileBufferInfo {
 
         this.leftKPatchLinesBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
-
+    /**
+     * Creates the top left buffer for the geom render mode (e.g. only the outline of the kPatch)
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createTopLeftGeomBufferInfo = (gl) => {
         if (this.topLeftGeomBufferInfo) {
             return;
@@ -390,7 +410,10 @@ class TileBufferInfo {
         this.topLeftGeomBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
 
-
+    /**
+     * Creates the top left kPatch buffer info if does not exist
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createTopLeftKPatchBufferInfo = (gl) => {
         if (this.topLeftKPatchBufferInfo) {
             return;
@@ -491,6 +514,10 @@ class TileBufferInfo {
         this.topLeftKPatchBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
 
+    /**
+     * Creates the top left kPatch buffer info if does not exist for rendering in line mode
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createTopLeftKPatchLinesBufferInfo = (gl) => {
         if (this.topLeftKPatchLinesBufferInfo) {
             return;
@@ -575,7 +602,10 @@ class TileBufferInfo {
         this.topLeftKPatchLinesBufferInfo = twgl.createBufferInfoFromArrays(gl, fullArrays);
     }
 
-
+    /**
+     * Create the required vertex buffers
+     * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
+     */
     createBufferInfo = (gl) => {
         this.createLeftGeomBufferInfo(gl);
         this.createLeftKPatchLinesBufferInfo(gl);
@@ -586,6 +616,11 @@ class TileBufferInfo {
         this.createTopLeftKPatchBufferInfo(gl);
     }
 
+    /**
+     * Get the appropriate geom buffer for the specified kPatch type
+     * @param {Number} type 
+     * @returns {twgl.BufferInfo}
+     */
     getTypeGeoBuffer = (type) => {
         type = Number.parseInt(type);
         switch (type) {
@@ -604,6 +639,11 @@ class TileBufferInfo {
         }
     }
 
+    /**
+     * Get the appropriate buffer for the specified kPatch type
+     * @param {Number} type 
+     * @returns {twgl.BufferInfo}
+     */
     getTypeKPatchBuffer = (type) => {
         type = Number.parseInt(type);
         switch (type) {
@@ -621,7 +661,12 @@ class TileBufferInfo {
                 console.error("Unknown Type: " + type);
         }
     }
-
+    
+    /**
+     * Get the appropriate line buffer for the specified kPatch type
+     * @param {Number} type 
+     * @returns {twgl.BufferInfo}
+     */
     getTypeKPatchLinesBuffer = (type) => {
         type = Number.parseInt(type);
         switch (type) {
