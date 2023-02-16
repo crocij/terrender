@@ -36,11 +36,11 @@ class DollyCam {
 
     /**
      * 
-     * @param {*} raster 
+     * @param {*} terrender 
      * @param {Array} dollyConfig 
      */
-    constructor(raster, dollyConfig) {
-        this.raster = raster;
+    constructor(terrender, dollyConfig) {
+        this.terrender = terrender;
         this.paresConfig(dollyConfig);
         this.running = false;
         this.init = true;
@@ -110,7 +110,7 @@ class DollyCam {
             this.init = false;
             this.running = true;
             this.startTime = Date.now();
-            this.raster.getTimer().reset();
+            this.terrender.getTimer().reset();
         }
     }
 
@@ -124,11 +124,11 @@ class DollyCam {
         // Dolly finished
         if (currentStep.stop) {
             this.running = false;
-            this.raster.getCamera().changeCamPosition(currentStep.startPostion, currentStep.startTarget);
+            this.terrender.getCamera().changeCamPosition(currentStep.startPostion, currentStep.startTarget);
 
             // UNCOMMENT FOR BENCH (2/3)
             // console.log('Nr. of swaps durring dolly: ' + this.nrSwapped);
-            // this.raster.getTimer().writeAverageTimingsToConsole();
+            // this.terrender.getTimer().writeAverageTimingsToConsole();
             // let csv;
             // let encodedUri;
 
@@ -187,19 +187,19 @@ class DollyCam {
         let newPosition = v3.add(currentStep.startPostion, v3.mulScalar(currentStep.vecPositions, percentageCurrentStep * currentStep.distPositions));
         let newTarget = v3.add(currentStep.startTarget, v3.mulScalar(currentStep.vecTargets, percentageCurrentStep * currentStep.distTargets));
 
-        this.raster.getCamera().changeCamPosition(newPosition, newTarget);
+        this.terrender.getCamera().changeCamPosition(newPosition, newTarget);
 
         // UNCOMMENT FOR BENCH (3/3)
         // if (swapped) {
         //     this.nrSwapped++;
         // }
 
-        // let currentFPS = this.raster.getTimer().getTimer('fps').lastValue;
+        // let currentFPS = this.terrender.getTimer().getTimer('fps').lastValue;
         // if (currentFPS < 55 || swapped) {
         //     this.timeLine.push({ timeStamp: currentTime, fps: currentFPS, swapped: swapped });
         // }
         // this.fpsBuckets[currentFPS - 1]++;
-        // let counters = this.raster.getCounters().getGenericCounters();
+        // let counters = this.terrender.getCounters().getGenericCounters();
         // Object.keys(counters).forEach(counterName => {
         //     let lastEntries = this.genericCounters[counterName];
         //     let lastVal = undefined;
@@ -215,7 +215,7 @@ class DollyCam {
         //     }
         // });
 
-        // let timers = this.raster.getTimer().timer;
+        // let timers = this.terrender.getTimer().timer;
         // Object.keys(timers).forEach(timerName => {
         //     if (timers[timerName].counter === 0) {
         //         return;

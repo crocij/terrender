@@ -2,7 +2,6 @@ import * as twgl from 'twgl.js';
 const m4 = twgl.m4;
 
 import BinTreeNode from '../BinTree/BinTreeNode.js';
-import Raster from '../Raster.js';
 
 let instance;
 
@@ -13,14 +12,14 @@ class TileBufferInfo {
 
     /**
      * Returns the tile buffer info singleton
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      * @param {Number} height Height of the mBlock
      * @param {Number} width Width of the mblock
      * @param {Number} sideLengthOS Side length of the mBlock in object space
      */
-    static getTileBufferInfo = (raster, height, width, sideLengthOS) => {
+    static getTileBufferInfo = (terrender, height, width, sideLengthOS) => {
         if (!instance) {
-            instance = new TileBufferInfo(raster, height, width, sideLengthOS);
+            instance = new TileBufferInfo(terrender, height, width, sideLengthOS);
         }
 
         return instance;
@@ -28,16 +27,16 @@ class TileBufferInfo {
 
     /**
      * @constructor
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      * @param {Number} height Height of the mBlock
      * @param {Number} width Width of the mblock
      * @param {Number} sideLengthOS Side length of the mBlock in object space
      */
-    constructor(raster, height = 2000, width = 2000, sideLengthOS = 1.0) {
-        this.raster = raster;
+    constructor(terrender, height = 2000, width = 2000, sideLengthOS = 1.0) {
+        this.terrender = terrender;
         this.height = height;
         this.width = width;
-        this.kPatchBase = this.raster.getParameters().kPatchBase;
+        this.kPatchBase = this.terrender.getParameters().kPatchBase;
         this.sideLengthOS = sideLengthOS;
         this.fullBufferInfo = undefined;
         this.quarterBufferInfo = undefined;
@@ -56,10 +55,10 @@ class TileBufferInfo {
      * @param {WebGLRenderingContext|WebGL2RenderingContext} gl 
      */
     recreateBuffers = (gl) => {
-        if (this.kPatchBase == this.raster.getParameters().kPatchBase) {
+        if (this.kPatchBase == this.terrender.getParameters().kPatchBase) {
             return;
         }
-        this.kPatchBase = this.raster.getParameters().kPatchBase;
+        this.kPatchBase = this.terrender.getParameters().kPatchBase;
 
         // Delete old buffers and create new ones
         this.leftKPatchBufferInfo && gl.deleteBuffer(this.leftKPatchBufferInfo.indices);
@@ -118,7 +117,7 @@ class TileBufferInfo {
         let vPlanarPosition = [];
         let indices = [];
 
-        let localSideLength = this.raster.getParameters().kPatchBase * 2 - 1;
+        let localSideLength = this.terrender.getParameters().kPatchBase * 2 - 1;
 
         // Note that for the kpatches with the hypotenuse on the border of the mblock the grid is double the size
         for (let y = 0; y < localSideLength; y++) {
@@ -132,14 +131,14 @@ class TileBufferInfo {
             }
         }
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase - 1; y++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase - 1; y++) {
 
-            let widthLimit = y - ((this.raster.getParameters().kPatchBase - 1) / 2) < 0 ? y + 1 : this.raster.getParameters().kPatchBase - y - 1;
+            let widthLimit = y - ((this.terrender.getParameters().kPatchBase - 1) / 2) < 0 ? y + 1 : this.terrender.getParameters().kPatchBase - y - 1;
 
             for (let x = 0; x < widthLimit; x++) {
 
                 // Single Split Triangle on the lower part of the patch on the Hypothenuse
-                if (x == widthLimit - 1 && y < (this.raster.getParameters().kPatchBase - 1) / 2) {
+                if (x == widthLimit - 1 && y < (this.terrender.getParameters().kPatchBase - 1) / 2) {
 
                     // Left Triangle
                     indices.push(
@@ -274,7 +273,7 @@ class TileBufferInfo {
         let vPlanarPosition = [];
         let indices = [];
 
-        let localSideLength = this.raster.getParameters().kPatchBase * 2 - 1;
+        let localSideLength = this.terrender.getParameters().kPatchBase * 2 - 1;
 
         // Note that for the kPatches with the hypotenuse on the border of the mblock the grid is double the size
         for (let y = 0; y < localSideLength; y++) {
@@ -288,14 +287,14 @@ class TileBufferInfo {
             }
         }
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase - 1; y++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase - 1; y++) {
 
-            let widthLimit = y - ((this.raster.getParameters().kPatchBase - 1) / 2) < 0 ? y + 1 : this.raster.getParameters().kPatchBase - y - 1;
+            let widthLimit = y - ((this.terrender.getParameters().kPatchBase - 1) / 2) < 0 ? y + 1 : this.terrender.getParameters().kPatchBase - y - 1;
 
             for (let x = 0; x < widthLimit; x++) {
 
                 // Single Split Triangle on the lower part of the patch on the Hypothenuse
-                if (x == widthLimit - 1 && y < (this.raster.getParameters().kPatchBase - 1) / 2) {
+                if (x == widthLimit - 1 && y < (this.terrender.getParameters().kPatchBase - 1) / 2) {
                     indices.push(
 
                         // Lower Left Point - Upper Left Point
@@ -422,81 +421,81 @@ class TileBufferInfo {
         let vPlanarPosition = [];
         let indices = [];
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase; y++) {
-            for (let x = 0; x < this.raster.getParameters().kPatchBase; x++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase; y++) {
+            for (let x = 0; x < this.terrender.getParameters().kPatchBase; x++) {
 
                 // x Part
-                vPlanarPosition.push((x * this.sideLengthOS / (this.raster.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
+                vPlanarPosition.push((x * this.sideLengthOS / (this.terrender.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
 
                 // y Part
-                vPlanarPosition.push((y * this.sideLengthOS / (this.raster.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
+                vPlanarPosition.push((y * this.sideLengthOS / (this.terrender.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
             }
         }
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase - 1; y++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase - 1; y++) {
             for (let x = 0; x < y + 1; x++) {
 
                 // Single Triangle on the hypotenuse of the patch
                 if (x == y) {
                     indices.push(
                         // lower Point
-                        x + y * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
 
                         // Upper Right Point
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 } else if (x % 2 == y % 2) { // Diagonal from bottom left to top right
 
                     // Upper Left Triangle
                     indices.push(
                         // lower left Point
-                        x + y * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
 
                         // Upper Right Point
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
 
                     // Lower Right Triangle
                     indices.push(
                         // lower left Point
-                        x + y * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
 
                         // lower right Point
-                        x + 1 + y * this.raster.getParameters().kPatchBase,
+                        x + 1 + y * this.terrender.getParameters().kPatchBase,
 
                         // upper right Point
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 } else { // Diagonal from top left to bottom right
 
                     // Lower left triangle
                     indices.push(
                         // lower left Point
-                        x + y * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
 
                         // lower right Point
-                        x + 1 + y * this.raster.getParameters().kPatchBase,
+                        x + 1 + y * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
 
                     // Upper Right Triangle
                     indices.push(
                         // lower right Point
-                        x + 1 + y * this.raster.getParameters().kPatchBase,
+                        x + 1 + y * this.terrender.getParameters().kPatchBase,
 
                         // upper right Point
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 }
             }
@@ -526,18 +525,18 @@ class TileBufferInfo {
         let vPlanarPosition = [];
         let indices = [];
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase; y++) {
-            for (let x = 0; x < this.raster.getParameters().kPatchBase; x++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase; y++) {
+            for (let x = 0; x < this.terrender.getParameters().kPatchBase; x++) {
 
                 // x Part
-                vPlanarPosition.push((x * this.sideLengthOS / (this.raster.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
+                vPlanarPosition.push((x * this.sideLengthOS / (this.terrender.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
 
                 // y Part
-                vPlanarPosition.push((y * this.sideLengthOS / (this.raster.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
+                vPlanarPosition.push((y * this.sideLengthOS / (this.terrender.getParameters().kPatchBase - 1)) - (this.sideLengthOS / 2));
             }
         }
 
-        for (let y = 0; y < this.raster.getParameters().kPatchBase - 1; y++) {
+        for (let y = 0; y < this.terrender.getParameters().kPatchBase - 1; y++) {
             for (let x = 0; x < y + 1; x++) {
 
                 // Single Triangle on the hypotenuse of the patch
@@ -545,46 +544,46 @@ class TileBufferInfo {
                     indices.push(
 
                         // lower Left Point - Upper Right Point
-                        x + y * this.raster.getParameters().kPatchBase,
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // lower Left Point - Upper Left Point
-                        x + y * this.raster.getParameters().kPatchBase,
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point - Upper Right Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 } else if (x % 2 == y % 2) { // Diagonal from bottom left to top right
                     indices.push(
                         
                         // lower Left Point - Upper Right Point
-                        x + y * this.raster.getParameters().kPatchBase,
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // lower Left Point - Upper Left Point
-                        x + y * this.raster.getParameters().kPatchBase,
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // Upper Left Point - Upper Right Point
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 } else { // Diagonal from top left to bottom right
                     indices.push(
 
                         // lower left Point - Upper Left Point
-                        x + y * this.raster.getParameters().kPatchBase,
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + y * this.terrender.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // upper right Point - Upper Left Point
-                        x + 1 + (y + 1) * this.raster.getParameters().kPatchBase,
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + (y + 1) * this.terrender.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
 
                         // lower right Point - Upper Left Point
-                        x + 1 + y * this.raster.getParameters().kPatchBase,
-                        x + (y + 1) * this.raster.getParameters().kPatchBase,
+                        x + 1 + y * this.terrender.getParameters().kPatchBase,
+                        x + (y + 1) * this.terrender.getParameters().kPatchBase,
                     )
                 }
             }

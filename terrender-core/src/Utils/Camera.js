@@ -1,5 +1,4 @@
 import * as twgl from 'twgl.js';
-import Raster from '../Raster';
 const m4 = twgl.m4;
 const v3 = twgl.v3;
 
@@ -17,18 +16,18 @@ class Camera {
      * @param {array} initialPos 
      * @param {array} target 
      * @param {array} up 
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      */
-    constructor(initialPos, target, up, raster) {
+    constructor(initialPos, target, up, terrender) {
         this.lastUpdate = undefined;
         this.clippingPlanes = [];
-        this.gl = raster.getGlInfo().getGl();
+        this.gl = terrender.getGlInfo().getGl();
         this.#fov = FOV;
 
         this.lookAt(initialPos, target, up);
         this.initialUp = up;
-        this.raster = raster;
-        this.loadingState = raster.getLoadingState();
+        this.terrender = terrender;
+        this.loadingState = terrender.getLoadingState();
         this.calculateMatrices();
     }
 
@@ -245,11 +244,11 @@ class Camera {
      * Render the currently saved view frustum if the update on camera change is disabled, e.g. render the frustum related to the last triangulation of the terrain
      */
     renderViewFrustum = () => {
-        if (!this.raster.getParameters().disableUpdateOnCam || !this.frustumVBO) {
+        if (!this.terrender.getParameters().disableUpdateOnCam || !this.frustumVBO) {
             return;
         }
 
-        let programInfo = this.raster.getGlInfo().getFrustumShader()
+        let programInfo = this.terrender.getGlInfo().getFrustumShader()
         this.gl.useProgram(programInfo.program);
         twgl.setBuffersAndAttributes(this.gl, programInfo, this.frustumVBO);
         this.gl.lineWidth(5)

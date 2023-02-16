@@ -5,14 +5,13 @@ const v3 = twgl.v3;
 import TileBufferInfo from './TileBufferInfo.js';
 import GradientTexture from './GradientTexture.js';
 import BinTreeNode from '../BinTree/BinTreeNode.js';
-import Raster from '../Raster.js';
 import Camera from '../Utils/Camera.js';
 import Parameters from '../Utils/Parameters.js';
 
 class WorkerQueue {
-    constructor(workerSrc, nrWorkers, raster) {
+    constructor(workerSrc, nrWorkers, terrender) {
         this.workers = [];
-        this.timer = raster.getTimer().addTimer(workerSrc, 'Time for webworker ' + workerSrc);
+        this.timer = terrender.getTimer().addTimer(workerSrc, 'Time for webworker ' + workerSrc);
         for (let i = 0; i < nrWorkers; i++) {
             this.workers.push({
                 worker: new Worker(workerSrc),
@@ -20,7 +19,7 @@ class WorkerQueue {
             })
         }
         this.queue = [];
-        this.counter = raster.getCounters().getGenericCounter(workerSrc);
+        this.counter = terrender.getCounters().getGenericCounter(workerSrc);
     }
 
     addToQueue = (responseBuffer) => {
@@ -66,7 +65,7 @@ class WorkerCreator {
      * 
      * @param {Parameters} parameters 
      */
-    createWorkers = (parameters, raster) => {
+    createWorkers = (parameters, terrender) => {
         if (this.initialized) {
             return;
         }
@@ -79,7 +78,7 @@ class WorkerCreator {
         }
         if (parameters.heightIsTiff) {
             nrWorkerQueues++;
-        } else if (parameters.isIOS || raster.getGlInfo().isWebGL2()) {
+        } else if (parameters.isIOS || terrender.getGlInfo().isWebGL2()) {
             nrWorkerQueues++;
         }
 
@@ -90,12 +89,12 @@ class WorkerCreator {
         let sizeWorkerQueue = navigator.hardwareConcurrency ? Math.max(Math.floor((navigator.hardwareConcurrency - 1) / nrWorkerQueues), 2) : Math.max(Math.floor(4 / nrWorkerQueues), 2);
 
         if (parameters.colorIsTiff) {
-            this.workerQueueTiffColor = new WorkerQueue('workerBundleTiffColor.js', sizeWorkerQueue, raster);
+            this.workerQueueTiffColor = new WorkerQueue('workerBundleTiffColor.js', sizeWorkerQueue, terrender);
         }
         if (parameters.heightIsTiff) {
-            this.workerQueueTiffHeight = new WorkerQueue('workerBundleTiffHeight.js', sizeWorkerQueue, raster);
-        } else if (parameters.isIOS || raster.getGlInfo().isWebGL2()) {
-            this.workerQueuePNG = new WorkerQueue('workerBundlePng.js', sizeWorkerQueue, raster);
+            this.workerQueueTiffHeight = new WorkerQueue('workerBundleTiffHeight.js', sizeWorkerQueue, terrender);
+        } else if (parameters.isIOS || terrender.getGlInfo().isWebGL2()) {
+            this.workerQueuePNG = new WorkerQueue('workerBundlePng.js', sizeWorkerQueue, terrender);
         }
     }
 }
@@ -109,21 +108,21 @@ class Tile {
      * @param {Number} lod 
      * @param {Number} xIndex 
      * @param {Number} yIndex 
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      */
-    constructor(lod, xIndex, yIndex, raster) {
+    constructor(lod, xIndex, yIndex, terrender) {
         if (!workerCreator.initialized) {
-            workerCreator.createWorkers(raster.getParameters(), raster);
+            workerCreator.createWorkers(terrender.getParameters(), terrender);
         }
-        this.tileBufferInfo = TileBufferInfo.getTileBufferInfo(raster, 257, 257, 1.0);
-        this.gradientTexture = GradientTexture.getGradientTexture(raster.getGlInfo().getGl());
-        this.loadingState = raster.getLoadingState();
-        this.timer = raster.getTimer();
-        this.tileBufferInfo.createBufferInfo(raster.getGlInfo().getGl());
+        this.tileBufferInfo = TileBufferInfo.getTileBufferInfo(terrender, 257, 257, 1.0);
+        this.gradientTexture = GradientTexture.getGradientTexture(terrender.getGlInfo().getGl());
+        this.loadingState = terrender.getLoadingState();
+        this.timer = terrender.getTimer();
+        this.tileBufferInfo.createBufferInfo(terrender.getGlInfo().getGl());
         this.isLoadingHeight = false;
         this.isLoadingColor = false;
-        this.gl = raster.getGlInfo().getGl();
-        this.raster = raster;
+        this.gl = terrender.getGlInfo().getGl();
+        this.terrender = terrender;
         this.lod = lod;
         this.xIndex = xIndex;
         this.yIndex = yIndex;
@@ -200,7 +199,7 @@ class Tile {
         if (this.noHeightTexture) {
 
             // Set Placeholder texture
-            if (this.raster.getGlInfo().isWebGL2()) {
+            if (this.terrender.getGlInfo().isWebGL2()) {
                 this.heightTexture = twgl.createTexture(this.gl, {
                     src: [0.0],
                     width: 1,
@@ -222,7 +221,7 @@ class Tile {
             return;
         }
 
-        if (this.raster.getParameters().heightIsTiff) {
+        if (this.terrender.getParameters().heightIsTiff) {
             this.loadingState.registerStartHeight();
             this.loadHeightTiff().then(res => {
                 this.loadingState.registerFinishHeight();
@@ -230,9 +229,9 @@ class Tile {
             }).catch(err => {
                 this.loadingState.registerFinishHeight();
                 this.isLoadingHeight = false;
-                this.raster.getParameters().errorCallback(err, 'Loading Height Failed');
+                this.terrender.getParameters().errorCallback(err, 'Loading Height Failed');
             });
-        } else if (this.raster.getParameters().isIOS || this.raster.getGlInfo().isWebGL2()) {
+        } else if (this.terrender.getParameters().isIOS || this.terrender.getGlInfo().isWebGL2()) {
 
             // https://bugs.webkit.org/show_bug.cgi?id=165297
             this.loadingState.registerStartHeight();
@@ -242,7 +241,7 @@ class Tile {
             }).catch(err => {
                 this.loadingState.registerFinishHeight();
                 this.isLoadingHeight = false;
-                this.raster.getParameters().errorCallback(err, 'Loading Height Failed');
+                this.terrender.getParameters().errorCallback(err, 'Loading Height Failed');
             });
         } else {
             this.loadHeightPng();
@@ -258,7 +257,7 @@ class Tile {
         if (this.noColorTexture) {
 
             // Set Placeholder Texture
-            if (this.raster.getGlInfo().isWebGL2()) {
+            if (this.terrender.getGlInfo().isWebGL2()) {
                 this.colorTexture = twgl.createTexture(this.gl, {
                     src: [0, 0, 0],
                     width: 1,
@@ -285,7 +284,7 @@ class Tile {
             return;
         }
 
-        if (this.raster.getParameters().colorIsTiff) {
+        if (this.terrender.getParameters().colorIsTiff) {
             this.loadingState.registerStartColor();
             this.loadColorTextureTiff().then(() => {
                 this.loadingState.registerFinishColor();
@@ -293,7 +292,7 @@ class Tile {
             }).catch(err => {
                 this.loadingState.registerFinishColor();
                 this.isLoadingColor = false;
-                this.raster.getParameters().errorCallback(err, 'Loading Color Failed');
+                this.terrender.getParameters().errorCallback(err, 'Loading Color Failed');
             });
         } else {
             this.loadColorTexturePng();
@@ -307,7 +306,7 @@ class Tile {
      * @returns {Promise}
      */
     loadColorTextureTiff = async () => {
-        if (this.raster.getParameters().noColorTextures) {
+        if (this.terrender.getParameters().noColorTextures) {
             return;
         }
 
@@ -322,7 +321,7 @@ class Tile {
                 this.isLoadingColor = false;
                 this.noColorTexture = true;
                 // Set Placeholder Texture
-                if (this.raster.getGlInfo().isWebGL2()) {
+                if (this.terrender.getGlInfo().isWebGL2()) {
                     this.colorTexture = twgl.createTexture(this.gl, {
                         src: [0, 0, 0],
                         width: 1,
@@ -381,7 +380,7 @@ class Tile {
      * Loads the color data if it is not in tif format
      */
     loadColorTexturePng = () => {
-        if (this.raster.getParameters().noColorTextures) {
+        if (this.terrender.getParameters().noColorTextures) {
             return;
         }
         this.isLoadingColor = true;
@@ -394,7 +393,7 @@ class Tile {
             if (!err) {
                 this.colorTexElem = source;
             } else {
-                this.raster.getParameters().errorCallback(err, 'Loading Color Failed');
+                this.terrender.getParameters().errorCallback(err, 'Loading Color Failed');
                 this.noColorTexture = true;
             }
             this.isLoadingColor = false;
@@ -429,7 +428,7 @@ class Tile {
                 this.noHeightTexture = true;
                 
                 // Set Placeholder texture
-                if (this.raster.getGlInfo().isWebGL2()) {
+                if (this.terrender.getGlInfo().isWebGL2()) {
                     this.heightTexture = twgl.createTexture(this.gl, {
                         src: [0.0],
                         width: 1,
@@ -458,13 +457,13 @@ class Tile {
             this.heightRawData = new Float32Array(await workerCreator.workerQueueTiffHeight.addToQueue(arrayBuffer));
             this.heightRasterHeight = Math.sqrt(this.heightRawData.length);
             this.heightRasterWidth = this.heightRasterHeight;
-            if (!this.raster.getGlInfo().isWebGL2()) {
+            if (!this.terrender.getGlInfo().isWebGL2()) {
                 this.heightRawData = new Uint8Array(this.heightRawData.buffer);
             }
             this.heightTextureTimer.addManualMeasurement(Date.now() - overallStartTime);
         }
 
-        if (this.raster.getGlInfo().isWebGL2()) {
+        if (this.terrender.getGlInfo().isWebGL2()) {
             this.heightTexture = twgl.createTexture(this.gl, {
                 src: this.heightRawData,
                 width: this.heightRasterHeight,
@@ -500,7 +499,7 @@ class Tile {
             if (!err) {
                 this.heightTexElement = source;
             } else {
-                this.raster.getParameters().errorCallback(err, 'Loading Height Failed');
+                this.terrender.getParameters().errorCallback(err, 'Loading Height Failed');
                 this.noHeightTexture = true;
             }
             this.isLoadingHeight = false;
@@ -541,13 +540,13 @@ class Tile {
             this.heightRawData = new Float32Array(await workerCreator.workerQueuePNG.addToQueue(arrayBuffer));
             this.heightRasterHeight = Math.sqrt(this.heightRawData.length);
             this.heightRasterWidth = this.heightRasterHeight;
-            if (!this.raster.getGlInfo().isWebGL2()) {
+            if (!this.terrender.getGlInfo().isWebGL2()) {
                 this.heightRawData = new Uint8Array(this.heightRawData.buffer);
             }
             this.heightTextureTimer.addManualMeasurement(Date.now() - startTime);
         }
 
-        if (this.raster.getGlInfo().isWebGL2()) {
+        if (this.terrender.getGlInfo().isWebGL2()) {
             this.heightTexture = twgl.createTexture(this.gl, {
                 src: this.heightRawData,
                 width: this.heightRasterHeight,
@@ -649,12 +648,12 @@ class Tile {
      * @param {array[BinTreeNode]} patches 
      */
     draw = (camera, programInfo, additionalUniforms, config, patches) => {
-        if (this.tileBufferInfo.kPatchBase !== this.raster.getParameters().kPatchBase) {
+        if (this.tileBufferInfo.kPatchBase !== this.terrender.getParameters().kPatchBase) {
             this.tileBufferInfo.recreateBuffers(this.gl);
         }
         patches.forEach((val, index) => {
             if (index == 0) {
-                this.raster.getCounters().getMblockCounter().addToCounter(patches[0].mblock.lod);
+                this.terrender.getCounters().getMblockCounter().addToCounter(patches[0].mblock.lod);
             }
             this.drawPatch(camera, programInfo, additionalUniforms, config, val);
         })
@@ -672,26 +671,26 @@ class Tile {
 
         // Convert mBlock Lod to BinTree Lod
         additionalUniforms.lod = patch.lod;
-        additionalUniforms.maxLod = this.raster.getParameters().maxBinLod;
-        this.raster.getCounters().getBinNodeCounter().addToCounter(patch.lod);
+        additionalUniforms.maxLod = this.terrender.getParameters().maxBinLod;
+        this.terrender.getCounters().getBinNodeCounter().addToCounter(patch.lod);
         const viewProjectionMatrix = camera.viewProjectionMatrix;
         const mvpMatrix = m4.multiply(viewProjectionMatrix, this.modelMatrix);
         const uniforms = {
 
             // Set texture to empty object if none available, else TWGL crashes when using webGL2
             heightTexture: this.heightTexture || {},
-            colorTexture: (this.raster.getParameters().noColorTextures ? this.gradientTexture.texture : this.colorTexture) || {},
-            noColorTexture: this.raster.getParameters().noColorTextures,
+            colorTexture: (this.terrender.getParameters().noColorTextures ? this.gradientTexture.texture : this.colorTexture) || {},
+            noColorTexture: this.terrender.getParameters().noColorTextures,
             mvpMatrix: mvpMatrix,
             coordRotationMatrix: patch.coordTransformationMatrix,
             sideLengthOS: this.sideLengthOS,
             noHeightTexture: this.noHeightTexture || this.isLoadingHeight,
             isLoadingColor: this.isLoadingColor,
             isLoadingHeight: this.isLoadingHeight,
-            renderUniColor: this.raster.getParameters().renderUniColor,
+            renderUniColor: this.terrender.getParameters().renderUniColor,
             uniColor: this.color,
-            heightScaling: this.raster.getParameters().heightScaling * this.raster.getParameters().verticalExaggeration,
-            estMaxHeight: this.raster.getParameters().estMaxHeight,
+            heightScaling: this.terrender.getParameters().heightScaling * this.terrender.getParameters().verticalExaggeration,
+            estMaxHeight: this.terrender.getParameters().estMaxHeight,
             modelMatrix: this.modelMatrix,
             ...additionalUniforms,
         }
@@ -712,7 +711,7 @@ class Tile {
             renderMode = this.gl.LINE_LOOP;
         }
 
-        this.raster.getCounters().getVertexCounter().addVertices(bufferInfo.numElements);
+        this.terrender.getCounters().getVertexCounter().addVertices(bufferInfo.numElements);
 
         twgl.setBuffersAndAttributes(this.gl, programInfo, bufferInfo);
         twgl.setUniforms(programInfo, uniforms);
@@ -732,7 +731,7 @@ class Tile {
      * @param {Array.<BinTreeNode>} patches
      */
     drawPixelPos = (camera, programInfo, additionalUniforms, patches) => {
-        if (this.tileBufferInfo.kPatchBase !== this.raster.getParameters().kPatchBase) {
+        if (this.tileBufferInfo.kPatchBase !== this.terrender.getParameters().kPatchBase) {
             this.tileBufferInfo.recreateBuffers(this.gl);
         }
         patches.forEach((val, index) => {
@@ -765,7 +764,7 @@ class Tile {
             sideLengthOS: this.sideLengthOS,
             noHeightTexture: this.noHeightTexture || this.isLoadingHeight,
             modelMatrix: this.modelMatrix,
-            heightScaling: this.raster.getParameters().heightScaling * this.raster.getParameters().verticalExaggeration,
+            heightScaling: this.terrender.getParameters().heightScaling * this.terrender.getParameters().verticalExaggeration,
             ...additionalUniforms
         }
 

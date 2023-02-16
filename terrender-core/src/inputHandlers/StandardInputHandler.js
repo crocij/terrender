@@ -16,17 +16,17 @@ class StandardInputHandler {
 
     /**
      * @constructor
-     * @param {Raster} raster Raster
+     * @param {Terrender} terrender
      * @param {Object} config Additional configuration for the controls
      * @param {Number} config.sensitivity Sensitivity of the camera control
      * @param {Number} config.positionFactor How much the sensitivity of the controls should change depending on the camera position Z value
      */
-    constructor(raster, config = {}) {
+    constructor(terrender, config = {}) {
         const { sensitivity = 1.0, positionFactor = 0.005 } = config;
-        this.#camera = raster.getCamera();
+        this.#camera = terrender.getCamera();
         this.positionFactor = positionFactor;
-        this.raster = raster;
-        this.gl = raster.getGlInfo().getGl();
+        this.terrender = terrender;
+        this.gl = terrender.getGlInfo().getGl();
         this.sensitivity = sensitivity;
 
         this.#interact = interact(this.gl.canvas);
@@ -92,7 +92,7 @@ class StandardInputHandler {
         this.#topDownMode = val;
         if (this.#topDownMode) {
             this.#camera.initialUp = [0, 1, 0];
-            let boundaries = this.raster.getParameters().boundaries;
+            let boundaries = this.terrender.getParameters().boundaries;
             let center = [(boundaries[2] + boundaries[0]) / 2, (boundaries[3] + boundaries[1]) / 2];
             let height = Math.abs((boundaries[3] - boundaries[1]) / 1.9) / Math.tan(this.#camera.getFOV() / 2);
             this.#camera.lookAt([...center, height], [...center, 0], this.#camera.initialUp);

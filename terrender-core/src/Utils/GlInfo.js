@@ -405,7 +405,7 @@ class GlInfo {
     static PIXEL_POS_RENDER_TARGETY = 'pixelPosY';
     static COMBINED_RENDER_TARGET = 'combined';
 
-    // Expose both constants outside of raster-core via instances object
+    // Expose both constants outside of terrender-core via instances object
     get COLOR_RENDER_TARGET() {
         return GlInfo.COLOR_RENDER_TARGET;
     }

@@ -37,14 +37,14 @@ class Quadtree {
 
     /**
      * 
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      * @param {Array.<Number>} boundaries in world space
      * @param {Number} x left most x Coordinate for getting data
      * @param {Number} y bottom most y Coordinate for getting data
      */
-    constructor(raster, boundaries, x, y) {
-        this.gl = raster.getGlInfo().getGl();
-        this.raster = raster;
+    constructor(terrender, boundaries, x, y) {
+        this.gl = terrender.getGlInfo().getGl();
+        this.terrender = terrender;
         this.roots = [];
         let xLength = Math.abs(boundaries[0] - boundaries[2]);
         let yLength = Math.abs(boundaries[1] - boundaries[3]);
@@ -56,7 +56,7 @@ class Quadtree {
                     boundaries[0] + (i + 0.5) * yLength,
                     boundaries[1] + 0.5 * yLength
                 ]
-                this.roots.push(new QuadtreeNode(raster, center[0], center[1], x + i, y, yLength, 0, this));
+                this.roots.push(new QuadtreeNode(terrender, center[0], center[1], x + i, y, yLength, 0, this));
             }
         } else {
             let nrOfMblocks = yLength / xLength;
@@ -65,7 +65,7 @@ class Quadtree {
                     boundaries[0] + 0.5 * xLength,
                     boundaries[1] + (0.5 + i) * xLength
                 ]
-                this.roots.push(new QuadtreeNode(raster, center[0], center[1], x, y + 1, xLength, 0, this));
+                this.roots.push(new QuadtreeNode(terrender, center[0], center[1], x, y + 1, xLength, 0, this));
             }
         }
 
@@ -113,8 +113,8 @@ class Quadtree {
     draw = (camera, programInfo, additionalUniforms, config) => {
         let node = this.renderList.first;
         if (node !== undefined) {
-            !this.raster.getGlInfo().isColorCanvasRenderTarget() && this.raster.getGlInfo().recreateColorRenderTarget(this.gl)
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.raster.getGlInfo().getColorRenderTarget());
+            !this.terrender.getGlInfo().isColorCanvasRenderTarget() && this.terrender.getGlInfo().recreateColorRenderTarget(this.gl)
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.terrender.getGlInfo().getColorRenderTarget());
             this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
         }
         while (node !== undefined) {
@@ -123,7 +123,7 @@ class Quadtree {
         }
 
         // Draw View frustum, in camera is checked whether it is necessary
-        this.raster.getCamera().renderViewFrustum();
+        this.terrender.getCamera().renderViewFrustum();
     }
 
     /**
@@ -136,13 +136,13 @@ class Quadtree {
     drawCombined = (camera, programInfo, additionalUniforms, config) => {  
         let node = this.renderList.first;
         if (node !== undefined) {
-            this.raster.getGlInfo().recreateCombinedRenderTargets();
-            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.raster.getGlInfo().getCombinedRenderTarget());
+            this.terrender.getGlInfo().recreateCombinedRenderTargets();
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.terrender.getGlInfo().getCombinedRenderTarget());
             this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
         }
 
         // Draw View frustum, in camera is checked whether it is necessary
-        this.raster.getCamera().renderViewFrustum();
+        this.terrender.getCamera().renderViewFrustum();
 
         while (node !== undefined) {
             node.draw(camera, programInfo, additionalUniforms, config);
@@ -160,11 +160,11 @@ class Quadtree {
         let node = this.renderList.first;
         if (node !== undefined) {
             if (additionalUniforms.renderXCoord) {
-                !this.raster.getGlInfo().isPixelPosCanvasRenderTargetX() && this.raster.getGlInfo().recreatePixelPosRenderTargetX(this.gl)
-                this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.raster.getGlInfo().getPixelPosRenderTargetX());
+                !this.terrender.getGlInfo().isPixelPosCanvasRenderTargetX() && this.terrender.getGlInfo().recreatePixelPosRenderTargetX(this.gl)
+                this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.terrender.getGlInfo().getPixelPosRenderTargetX());
             } else {
-                !this.raster.getGlInfo().isPixelPosCanvasRenderTargetY() && this.raster.getGlInfo().recreatePixelPosRenderTargetY(this.gl)
-                this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.raster.getGlInfo().getPixelPosRenderTargetY());
+                !this.terrender.getGlInfo().isPixelPosCanvasRenderTargetY() && this.terrender.getGlInfo().recreatePixelPosRenderTargetY(this.gl)
+                this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.terrender.getGlInfo().getPixelPosRenderTargetY());
             }
             this.gl.clear(this.gl.DEPTH_BUFFER_BIT | this.gl.COLOR_BUFFER_BIT);
         }
@@ -197,7 +197,7 @@ class Quadtree {
      * Clean up GPU cache
      */
     unloadUnusedData = () => {
-        while (this.onGPUList.size > this.raster.getParameters().maxGpuCache) {
+        while (this.onGPUList.size > this.terrender.getParameters().maxGpuCache) {
             let lastNode = this.onGPUList.last;
             lastNode.unloadData();
         }
@@ -207,7 +207,7 @@ class Quadtree {
      * Clean up RAM cache
      */
     deleteUnusedData = () => {
-        while (this.onRAMList.size > this.raster.getParameters().maxRamCache) {
+        while (this.onRAMList.size > this.terrender.getParameters().maxRamCache) {
             let lastNode = this.onRAMList.last;
             lastNode.deleteData();
         }

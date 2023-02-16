@@ -1,12 +1,11 @@
 import * as twgl from 'twgl.js';
 const v3 = twgl.v3;
 import Tile from '../drawableShapes/Tile.js'
-import Raster from '../Raster.js';
 
 class QuadtreeNode {
 
     /**
-     * @param {Raster} raster
+     * @param {Terrender} terrender
      * @param {Number} centerHeight 
      * @param {Number} centerWidth
      * @param {Number} x used for loading tile
@@ -16,8 +15,8 @@ class QuadtreeNode {
      * @param {Quadtree} tree 
      * @param {QuadtreeNode} parent 
      */
-    constructor(raster, centerWidth, centerHeight, x, y, sideLength, lod, tree, parent = undefined) {
-        this.raster = raster;
+    constructor(terrender, centerWidth, centerHeight, x, y, sideLength, lod, tree, parent = undefined) {
+        this.terrender = terrender;
         this.lod = lod;
         this.centerHeight = centerHeight;
         this.centerWidth = centerWidth;
@@ -259,7 +258,7 @@ class QuadtreeNode {
         if (!this.upperLeftChild) {
             let center = this.getUpperLeftCenter()
             this.upperLeftChild = new QuadtreeNode(
-                this.raster,
+                this.terrender,
                 center[0],
                 center[1],
                 this.x * 2,
@@ -281,7 +280,7 @@ class QuadtreeNode {
         if (!this.upperRightChild) {
             let center = this.getUpperRightCenter()
             this.upperRightChild = new QuadtreeNode(
-                this.raster,
+                this.terrender,
                 center[0],
                 center[1],
                 this.x * 2 + 1,
@@ -303,7 +302,7 @@ class QuadtreeNode {
         if (!this.lowerLeftChild) {
             let center = this.getLowerLeftCenter()
             this.lowerLeftChild = new QuadtreeNode(
-                this.raster,
+                this.terrender,
                 center[0],
                 center[1],
                 this.x * 2,
@@ -325,7 +324,7 @@ class QuadtreeNode {
         if (!this.lowerRightChild) {
             let center = this.getLowerRightCenter()
             this.lowerRightChild = new QuadtreeNode(
-                this.raster,
+                this.terrender,
                 center[0],
                 center[1],
                 this.x * 2 + 1,
@@ -344,7 +343,7 @@ class QuadtreeNode {
      */
     loadData = () => {
         if (!this.tile) {
-            this.tile = new Tile(this.lod, this.x, this.y, this.raster);
+            this.tile = new Tile(this.lod, this.x, this.y, this.terrender);
             this.tile.translate(v3.create(this.centerWidth, this.centerHeight, 0));
             this.tile.scale(this.sideLength);
         }

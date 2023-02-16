@@ -1,4 +1,4 @@
-import Raster from "raster-core";
+import Terrender from "terrender-core";
 import * as twgl from 'twgl.js';
 const finalFs = require('./shaders/final.frag');
 const finalVs = require('./shaders/final.vert');
@@ -38,15 +38,15 @@ function normalizeVec(v) {
 class Drawing {
     /**
      * 
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      */
-    constructor(raster) {
-        this.raster = raster;
+    constructor(terrender) {
+        this.terrender = terrender;
         this.isActive = false;
         this.changed = false;
 
         // Register Listeners
-        let gl = raster.getGlInfo().getGl();
+        let gl = terrender.getGlInfo().getGl();
         gl.canvas.addEventListener('mousedown', this.mouseDown);
         gl.canvas.addEventListener('mouseup', this.mouseUp);
         gl.canvas.addEventListener('mousemove', this.mouseMove);
@@ -62,7 +62,7 @@ class Drawing {
         this.mouseDown = false;
 
         // Setup Buckets
-        let boundaries = this.raster.getParameters().boundaries;
+        let boundaries = this.terrender.getParameters().boundaries;
         let xDim = boundaries[2] - boundaries[0];
         let yDim = boundaries[3] - boundaries[1];
         this.bucketsX = 0;
@@ -160,7 +160,7 @@ class Drawing {
         this.fileErrorDiv = document.querySelector('#fileError');
 
         // Setup Combination Rendering Step
-        if (this.raster.getGlInfo().isWebGL2()) {
+        if (this.terrender.getGlInfo().isWebGL2()) {
             this.programInfo = twgl.createProgramInfo(gl, [finalES300Vs, finalES300Fs]);
         } else {
             this.programInfo = twgl.createProgramInfo(gl, [finalVs, finalFs]);
@@ -189,7 +189,7 @@ class Drawing {
     }
 
     renderResult = () => {
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
@@ -197,9 +197,9 @@ class Drawing {
 
         twgl.setBuffersAndAttributes(gl, this.programInfo, this.vbo);
         let generalUniforms = {
-            colorTexture: this.raster.getGlInfo().getColorTexture(),
-            pixelPosTextureX: this.raster.getGlInfo().getPixelPosTextureX(),
-            pixelPosTextureY: this.raster.getGlInfo().getPixelPosTextureY(),
+            colorTexture: this.terrender.getGlInfo().getColorTexture(),
+            pixelPosTextureX: this.terrender.getGlInfo().getPixelPosTextureX(),
+            pixelPosTextureY: this.terrender.getGlInfo().getPixelPosTextureY(),
             linesTexture: this.lineTexture,
             linesLength: this.lines.length,
             renderCurrentLine: this.currentLine !== undefined,
@@ -207,7 +207,7 @@ class Drawing {
             currentLineP2: this.currentLine ? this.currentLine.p2 : [0, 0],
             currentLineWidth: this.currentLine ? this.currentLine.width : 1.0,
             currentLineColor: this.currentLine ? this.currentLine.color : [0, 0, 0, 0],
-            boundaries: this.raster.getParameters().boundaries,
+            boundaries: this.terrender.getParameters().boundaries,
             bucketDimensions: [this.bucketsX, this.bucketsY],
             bucketsTexture: this.bucketTexture,
             maxLinesBucket: this.maxLinesBucket,
@@ -270,7 +270,7 @@ class Drawing {
     }
 
     createLineTexture = () => {
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         if (this.lines.length == 0) {
 
             // Set Fallback Texture
@@ -313,7 +313,7 @@ class Drawing {
     }
 
     createBucketTexture = () => {
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         let maxLength = Number.MIN_SAFE_INTEGER;
         this.buckets.forEach(bucket => {
             if (bucket.indices.length > maxLength) {
@@ -461,8 +461,8 @@ class Drawing {
     }
 
     getBucketIndex = (pos) => {
-        let indexX = Math.floor((pos[0] - this.raster.getParameters().boundaries[0]) / this.bucketStepX);
-        let indexY = Math.floor((pos[1] - this.raster.getParameters().boundaries[1]) / this.bucketStepY);
+        let indexX = Math.floor((pos[0] - this.terrender.getParameters().boundaries[0]) / this.bucketStepX);
+        let indexY = Math.floor((pos[1] - this.terrender.getParameters().boundaries[1]) / this.bucketStepY);
         return indexY * this.bucketsX + indexX;
     }
 
@@ -630,7 +630,7 @@ class Drawing {
     }
 
     getMousePosition = (inputX, inputY) => {
-        if (this.raster.getGlInfo().isWebGL2()) {
+        if (this.terrender.getGlInfo().isWebGL2()) {
             return this.getMousePositionGL2(inputX, inputY);
         } else {
             return this.getMousePositionGL1(inputX, inputY);
@@ -640,18 +640,18 @@ class Drawing {
     getMousePositionGL1 = (inputX, inputY) => {
         let x = 0;
         let y = 0;
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);
         let mouseY = Math.floor(gl.canvas.height - inputY);
-        if (this.raster.getGlInfo().getPixelPosRenderTargetX()) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.raster.getGlInfo().getPixelPosRenderTargetX());
+        if (this.terrender.getGlInfo().getPixelPosRenderTargetX()) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.terrender.getGlInfo().getPixelPosRenderTargetX());
             let posArray = new Uint8Array(4);
             gl.readPixels(mouseX, mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, posArray);
             posArray = new Float32Array(posArray.buffer);
             x = posArray[0];
         }
-        if (this.raster.getGlInfo().getPixelPosRenderTargetY()) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.raster.getGlInfo().getPixelPosRenderTargetY());
+        if (this.terrender.getGlInfo().getPixelPosRenderTargetY()) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.terrender.getGlInfo().getPixelPosRenderTargetY());
             let posArray = new Uint8Array(4);
             gl.readPixels(mouseX, mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, posArray);
             posArray = new Float32Array(posArray.buffer);
@@ -663,11 +663,11 @@ class Drawing {
     getMousePositionGL2 = (inputX, inputY) => {
         let x = 0;
         let y = 0;
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);
         let mouseY = Math.floor(gl.canvas.height - inputY);
-        if (this.raster.getGlInfo().getCombinedRenderTarget()) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.raster.getGlInfo().getCombinedRenderTarget());
+        if (this.terrender.getGlInfo().getCombinedRenderTarget()) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.terrender.getGlInfo().getCombinedRenderTarget());
             gl.readBuffer(gl.COLOR_ATTACHMENT1)
             let posArray = new Uint8Array(4);
             gl.readPixels(mouseX, mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, posArray);
@@ -685,7 +685,7 @@ class Drawing {
     }
 
     isMousePositionOutside = (inputX, inputY) => {
-        if (this.raster.getGlInfo().isWebGL2()) {
+        if (this.terrender.getGlInfo().isWebGL2()) {
             return this.isMousePositionOutsideGL2(inputX, inputY);
         } else {
             return this.isMousePositionOutsideGL1(inputX, inputY);
@@ -693,11 +693,11 @@ class Drawing {
     }
 
     isMousePositionOutsideGL1 = (inputX, inputY) => {
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);
         let mouseY = Math.floor(gl.canvas.height - inputY);
-        if (this.raster.getGlInfo().getColorRenderTarget()) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.raster.getGlInfo().getColorRenderTarget());
+        if (this.terrender.getGlInfo().getColorRenderTarget()) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.terrender.getGlInfo().getColorRenderTarget());
             let colorArray = new Uint8Array(4);
             gl.readPixels(mouseX, mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, colorArray);
 
@@ -708,11 +708,11 @@ class Drawing {
     }
 
     isMousePositionOutsideGL2 = (inputX, inputY) => {
-        let gl = this.raster.getGlInfo().getGl();
+        let gl = this.terrender.getGlInfo().getGl();
         let mouseX = Math.floor(inputX);
         let mouseY = Math.floor(gl.canvas.height - inputY);
-        if (this.raster.getGlInfo().getCombinedRenderTarget()) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.raster.getGlInfo().getCombinedRenderTarget());
+        if (this.terrender.getGlInfo().getCombinedRenderTarget()) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.terrender.getGlInfo().getCombinedRenderTarget());
             gl.readBuffer(gl.COLOR_ATTACHMENT0)
             let colorArray = new Uint8Array(4);
             gl.readPixels(mouseX, mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, colorArray);

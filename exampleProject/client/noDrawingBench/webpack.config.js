@@ -43,9 +43,9 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: './src/index.html' },
-        { from: require.resolve('raster-core/webworkerPng/workerBundlePng.js')},
-        { from: require.resolve('raster-core/webworkerTiffHeight/workerBundleTiffHeight.js')},
-        { from: require.resolve('raster-core/webworkerTiffColor/workerBundleTiffColor.js')},
+        { from: require.resolve('terrender-core/webworkerPng/workerBundlePng.js')},
+        { from: require.resolve('terrender-core/webworkerTiffHeight/workerBundleTiffHeight.js')},
+        { from: require.resolve('terrender-core/webworkerTiffColor/workerBundleTiffColor.js')},
         { from: '../common/style.css'}
       ]
     }),

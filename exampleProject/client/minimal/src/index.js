@@ -1,4 +1,4 @@
-import { Raster, StandardInputHandler } from 'raster-core';
+import { Terrender, StandardInputHandler } from 'terrender-core';
 import Drawing from '../../common/Drawing';
 import DollyCam from '../../common/DollyCam';
 
@@ -24,8 +24,8 @@ let mainFunction = (config) => {
         isWebGL2 = false;
     }
 
-    let raster = new Raster(gl, config, config.initialCamera);
-    let inputHandler = new StandardInputHandler(raster);
+    let terrender = new Terrender(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(terrender);
 
     // Setup Info UI
     const loadingDiv = document.querySelector('#loadingSpinner');
@@ -36,7 +36,7 @@ let mainFunction = (config) => {
     legalNoticeDiv.innerHTML = legalNotice;
 
     // Setup line drawing
-    const drawing = new Drawing(raster);
+    const drawing = new Drawing(terrender);
 
     // Add UI Buttons
     let drawingConfigContainerDiv = document.querySelector('#drawingContainer');
@@ -65,22 +65,22 @@ let mainFunction = (config) => {
     // Dolly Cam
     let dollyCam;
     if (config.dollyCam && config.dollyCam.length > 0) {
-        dollyCam = new DollyCam(raster, config.dollyCam);
+        dollyCam = new DollyCam(terrender, config.dollyCam);
     }
 
 
-    raster.setRenderLoopCallback((didDraw, swapped) => {
+    terrender.setRenderLoopCallback((didDraw, swapped) => {
         didDraw && dollyCam && dollyCam.start();
         dollyCam && dollyCam.advance(swapped);
 
-        loadingDiv.style.visibility = !raster.getLoadingState().currentlyLoadingHeight && !raster.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
+        loadingDiv.style.visibility = !terrender.getLoadingState().currentlyLoadingHeight && !terrender.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
 
         // Cam does not update but maybe lines change -> redraw lines
         if (drawing.isActive && (drawing.hasChanged() || didDraw)) {
             drawing.renderResult();
         }
     });
-    raster.setDrawCallback(() => {
+    terrender.setDrawCallback(() => {
 
         // Terrain has changed and line draw will not happen in general render loop callback
         if (!drawing.isActive) {
@@ -89,13 +89,13 @@ let mainFunction = (config) => {
     });
 
     if (isWebGL2) {
-        raster.getGlInfo().recreateCombinedRenderTargets()
+        terrender.getGlInfo().recreateCombinedRenderTargets()
     } else {
-        raster.getGlInfo().recreateColorRenderTarget();
-        raster.getGlInfo().recreatePixelPosRenderTarget();
+        terrender.getGlInfo().recreateColorRenderTarget();
+        terrender.getGlInfo().recreatePixelPosRenderTarget();
     }
 
-    raster.start();
+    terrender.start();
 }
 
 fetch('config').then(res => {

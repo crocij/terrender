@@ -1,5 +1,4 @@
 import Quadtree from "../Quadtree/Quadtree";
-import Raster from "../Raster";
 import BinTreeNode from "./BinTreeNode";
 
 /**
@@ -10,12 +9,12 @@ class BinTree {
     /**
      * Root Element of the Bintree
      * 
-     * @param {Raster} raster 
+     * @param {Terrender} terrender 
      * @param {Quadtree} quadTree 
      * @param {Array.<number>} boundaries 
      */
-    constructor(raster, quadTree, boundaries) {
-        this.raster = raster;
+    constructor(terrender, quadTree, boundaries) {
+        this.terrender = terrender;
         this.center = [
             (boundaries[0] + boundaries[2]) / 2,
             (boundaries[1] + boundaries[3]) / 2
@@ -67,11 +66,11 @@ class BinTree {
                         this.boundaries[1] + 0.5 * yLength
                     ]
                     if (i % 2 == 0) {
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPLEFT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMRIGHT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPLEFT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMRIGHT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
                     } else {
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMLEFT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPRIGHT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMLEFT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPRIGHT, undefined, center, yLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
                     }
                 }
             } else {
@@ -82,17 +81,17 @@ class BinTree {
                         this.boundaries[0] + (i + 0.5) * xLength
                     ]
                     if (i % 2 == 0) {
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMLEFT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPRIGHT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMLEFT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPRIGHT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
                     } else {
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPLEFT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
-                        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMRIGHT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPLEFT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2)));
+                        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMRIGHT, undefined, center, xLength, 0, this.quadTree.roots[i], [0, 0], this.getGeomErrorRootNode(i * 2 + 1)));
                     }
                 }
             }
         }
 
-        if (this.raster.getParameters().dynamicBinTreeUpdate) {
+        if (this.terrender.getParameters().dynamicBinTreeUpdate) {
             this.dynamicUpdate(camera, cameraHasChanged);
         } else {
             this.recursiveUpdate(camera);
@@ -130,7 +129,7 @@ class BinTree {
 
                 // Based on the ratio between currently ready mblocks and not ready ones.
                 // Only apply if the number of rendered mblocks would not differ too much to avoid the pop in of low resolution textures
-                if (cameraHasChanged && this.quadTree.futureList.size / this.quadTree.renderList.size > this.raster.getParameters().dynamicBinTreeUpdateTreeLengthRatio) {
+                if (cameraHasChanged && this.quadTree.futureList.size / this.quadTree.renderList.size > this.terrender.getParameters().dynamicBinTreeUpdateTreeLengthRatio) {
                     let nrNotReadyBlocks = 0;
                     let iterator = this.quadTree.futureList.first;
                     while (iterator) {
@@ -140,7 +139,7 @@ class BinTree {
 
                         iterator = iterator.futureNext;
                     }
-                    if (nrNotReadyBlocks / this.quadTree.futureList.size > this.raster.getParameters().dynamicBinTreeUpdateNotReadyRatio) {
+                    if (nrNotReadyBlocks / this.quadTree.futureList.size > this.terrender.getParameters().dynamicBinTreeUpdateNotReadyRatio) {
                         break;
                     }
                 }

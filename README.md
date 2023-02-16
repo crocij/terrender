@@ -1,6 +1,10 @@
 # General Information
 To run and bundle any of the projects, you have to install node.js (https://nodejs.org/en/) on your device. Everything was tested with node version ```v14.17.5```. The browser should be recent, see here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_class_fields, "private class fields" is the relevant feature that needs to be supported.
 
+See the accompanying paper for more information: 
+
+Julian A. Croci, Alireza Amiraghdam, and Renato Pajarola. 2022. Terrender: A Web-Based Multi-Resolution Terrain Rendering Framework. In Proceedings of the 27th International Conference on 3D Web Technology (Web3D '22). Association for Computing Machinery, New York, NY, USA, Article 3, 1–11. https://doi.org/10.1145/3564533.3564567
+
 # Step by Step Running the exampleProject
 As the built bundle is also in the git repo, building is not required.
 
@@ -58,16 +62,16 @@ Note that the default parameters are fit for the world dataset
 To start the server run ```node /path/to/git/exampleProject/server/index.js /path/to/config.json``` (the relative paths could also be used). If no config file is provided it will look for a config file names ```config.json``` in the server folder.
 
 ## Bundling the frontend
-1. Navigate into the ```raster-core``` folder and run ```npm link```.
-2. Navigate into  ```exampleProject/client``` and run ```npm link raster-core```.
+1. Navigate into the ```terrender-core``` folder and run ```npm link```.
+2. Navigate into  ```exampleProject/client``` and run ```npm link terrender-core```.
 1. Navigate into the ```exampleProject/client/[noDrawingBench|minimal|standard|expert]``` directory and run ```npx webpack```, this will bundle the code into a single javascript file and copy it into the public folder. Note that you do not have to install any node-modules because it uses the node modules we already installed in the parent directory.
 
-# raster-core package
-This contains the core Raster renderer, it can be used in a normal project (for example ```exampleProject```) like a node modules following these steps:
-1. Navigate into the ```raster-core``` folder and run ```npm link```.
-2. In your client project folder (where the ```package.json``` is) run ```npm link raster-core```.
-In the background npm creates simlinks, all changes made in ```raster-core``` are reflected directly in the projects. Note that the webpack config in the projects still needs to handle the bundling of ```raster-core```.
-3. Please note that the three files containing the code for the webworkers must be directly copied from their path in raster core (for example ```./webworkerTiffHeight/workerBundleTiffHeight.js```) in to the public folder of the webserver so that they are handed out as is. An example to configure this using webpack can be found in the exampleProject.
+# terrender-core package
+This contains the core renderer, it can be used in a normal project (for example ```exampleProject```) like a node modules following these steps:
+1. Navigate into the ```terrender-core``` folder and run ```npm link```.
+2. In your client project folder (where the ```package.json``` is) run ```npm link terrender-core```.
+In the background npm creates simlinks, all changes made in ```terrender-core``` are reflected directly in the projects. Note that the webpack config in the projects still needs to handle the bundling of ```terrender-core```.
+3. Please note that the three files containing the code for the webworkers must be directly copied from their path in terrender core (for example ```./webworkerTiffHeight/workerBundleTiffHeight.js```) in to the public folder of the webserver so that they are handed out as is. An example to configure this using webpack can be found in the exampleProject.
 
 # geomErrorComputation
 The node script in this calculates a ```.json``` file that contains the precalculated geomtric min-max bounds. It requires a config file like the one already in the folder. The properties in the config file are similar to the one of the exampleProject. The only additional property is ```asset.minDifference```. This property can be used to minimize the file size of the error file by discarding children of nodes when their height difference is below the set value.

@@ -1,4 +1,4 @@
-import {Raster, StandardInputHandler} from 'raster-core';
+import {Terrender, StandardInputHandler} from 'terrender-core';
 import DollyCam from '../../common/DollyCam';
 
 let mainFunction = (config) => {
@@ -23,8 +23,8 @@ let mainFunction = (config) => {
         isWebGL2 = false;
     }
 
-    let raster = new Raster(gl, config, config.initialCamera);
-    let inputHandler = new StandardInputHandler(raster);
+    let terrender = new Terrender(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(terrender);
 
     // Setup Info UI
     const loadingDiv = document.querySelector('#loadingSpinner');
@@ -47,17 +47,17 @@ let mainFunction = (config) => {
     // Dolly Cam
     let dollyCam;
     if (config.dollyCam && config.dollyCam.length > 0) {
-        dollyCam = new DollyCam(raster, config.dollyCam);
+        dollyCam = new DollyCam(terrender, config.dollyCam);
     }
 
-    raster.setRenderLoopCallback((didDraw, swapped) => {
+    terrender.setRenderLoopCallback((didDraw, swapped) => {
         didDraw && dollyCam && dollyCam.start();
         dollyCam && dollyCam.advance(swapped);
 
-        loadingDiv.style.visibility = !raster.getLoadingState().currentlyLoadingHeight && !raster.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
+        loadingDiv.style.visibility = !terrender.getLoadingState().currentlyLoadingHeight && !terrender.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
     });
 
-    raster.start();
+    terrender.start();
 }
 
 fetch('config').then(res => {

@@ -3,13 +3,12 @@ const m4 = twgl.m4;
 const v3 = twgl.v3;
 
 import QuadtreeNode from "../Quadtree/QuadtreeNode";
-import Raster from '../Raster';
 
 class BinTreeNode {
 
     /**
      * Constructor of a bintree node
-     * @param {Raster} raster Raster
+     * @param {Terrender} terrender
      * @param {Number} type Type of node
      * @param {Array.<Number>} refinementPoint Global coordinates of the refinement point (e.g. center of hypotenuse)
      * @param {Number} edgeLength The not hypotenuse side length
@@ -18,8 +17,8 @@ class BinTreeNode {
      * @param {Array} offsetMblock Offset within the mblock
      * @param {Object} geomErrorNode Matching node in the geom error tree, if node has no children forwards same node on split
      */
-    constructor(raster, type, parent, refinementPoint, edgeLength, lod, mblock, offsetMblock, geomErrorNode = undefined) {
-        this.raster = raster;
+    constructor(terrender, type, parent, refinementPoint, edgeLength, lod, mblock, offsetMblock, geomErrorNode = undefined) {
+        this.terrender = terrender;
         this.type = type;
         this.parent = parent;
         this.refinementPoint = refinementPoint;
@@ -37,22 +36,22 @@ class BinTreeNode {
      * @type {boolean} Do the children of this bintree node lay in a new mblock
      */
     get newMblock() {
-        return this.lod % 2 == 0 && (this.lod >= this.raster.getParameters().lodsFirstMblock);
+        return this.lod % 2 == 0 && (this.lod >= this.terrender.getParameters().lodsFirstMblock);
     }
 
     /**
      * @type {Number} The depth in the current mblock. It is the same for two consecutive lods
      */
     get currentDepthInMblock() {
-        if (this.lod <= this.raster.getParameters().lodsFirstMblock) {
+        if (this.lod <= this.terrender.getParameters().lodsFirstMblock) {
             return Math.floor(this.lod / 2);
         } else {
 
             // Note that the lodsFirstBlock is always even
             if (this.lod % 2 == 1) {
-                return this.raster.getParameters().lodsFirstMblock / 2 - 1;
+                return this.terrender.getParameters().lodsFirstMblock / 2 - 1;
             } else {
-                return this.raster.getParameters().lodsFirstMblock / 2;
+                return this.terrender.getParameters().lodsFirstMblock / 2;
             }
         }
     }
@@ -199,7 +198,7 @@ class BinTreeNode {
      * @returns {boolean} Is the value of the error metric above the threshold
      */
     errorFunction = (camera) => {
-        if (this.lod == this.raster.getParameters().maxBinLod) {
+        if (this.lod == this.terrender.getParameters().maxBinLod) {
             return false;
         }
 
@@ -209,24 +208,24 @@ class BinTreeNode {
 
         // Use error as flag to check if any metric is set
         let error = 0;
-        if (this.raster.getParameters().useCullingMetric) {
+        if (this.terrender.getParameters().useCullingMetric) {
             cullingFactor = this.isEntirelyInFrustum ? 1 : this.calculateCullingError(camera);
             if (cullingFactor == 0) {
                 return false;
             }
             error = 1;
         }
-        if (this.raster.getParameters().useGeomMetric && this.geomErrorNode) {
+        if (this.terrender.getParameters().useGeomMetric && this.geomErrorNode) {
             geomError = this.calculateGeomError();
             error = 1;
         }
-        if (this.raster.getParameters().useDistanceMetric) {
+        if (this.terrender.getParameters().useDistanceMetric) {
             octagonDistance = this.calculateOctohedronDistance(camera);
             error = 1;
         }
 
         error = octagonDistance * cullingFactor * geomError * error;
-        return error > this.raster.getParameters().errorThreshold;
+        return error > this.terrender.getParameters().errorThreshold;
     }
 
     /**
@@ -235,13 +234,13 @@ class BinTreeNode {
      */
     calculateGeomError = () => {
         if (!this.geomErrorNode || !this.geomErrorNode.b || this.geomErrorNode.b.length != 2) {
-            return this.raster.getParameters().heightScaling;
+            return this.terrender.getParameters().heightScaling;
         }
 
         let bounds = this.geomErrorNode.b;
         return Math.max(
-            this.raster.getParameters().heightScaling * (bounds[1] - bounds[0]), 
-            this.raster.getParameters().heightScaling
+            this.terrender.getParameters().heightScaling * (bounds[1] - bounds[0]), 
+            this.terrender.getParameters().heightScaling
         );
     }
 
@@ -352,17 +351,17 @@ class BinTreeNode {
         // If we have the geom min max use this, else edge length times 2
         let heightBound;
 
-        if (this.raster.getParameters().useMinMaxForErrors && this.geomErrorNode && this.geomErrorNode.b && this.geomErrorNode.b.length == 2) {
+        if (this.terrender.getParameters().useMinMaxForErrors && this.geomErrorNode && this.geomErrorNode.b && this.geomErrorNode.b.length == 2) {
 
             //TODO: Should we increase this bounds?
             heightBound = [
-                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[0],
-                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]
+                this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().heightScaling * this.geomErrorNode.b[0],
+                this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().heightScaling * this.geomErrorNode.b[1]
             ]
         } else {
             heightBound = [
                 0,
-                Math.max(this.edgeLength * 2, this.raster.getParameters().verticalExaggeration * this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)
+                Math.max(this.edgeLength * 2, this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().estMaxHeight * this.terrender.getParameters().heightScaling)
             ];
         }
 
@@ -388,7 +387,7 @@ class BinTreeNode {
         if (result == 0) {
             result = Number.MAX_VALUE;
         } else {
-            result = 1.0 / Math.pow(result, this.raster.getParameters().distanceMetricExponent)
+            result = 1.0 / Math.pow(result, this.terrender.getParameters().distanceMetricExponent)
         }
 
         return result;
@@ -410,13 +409,13 @@ class BinTreeNode {
         let minMaxBounds;
         if (this.geomErrorNode && this.geomErrorNode.b && this.geomErrorNode.b.length == 2) {
             minMaxBounds = [
-                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[0],
-                this.raster.getParameters().verticalExaggeration * this.raster.getParameters().heightScaling * this.geomErrorNode.b[1]
+                this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().heightScaling * this.geomErrorNode.b[0],
+                this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().heightScaling * this.geomErrorNode.b[1]
             ];
         } else {
             minMaxBounds = [
                 0, 
-                Math.max(this.raster.getParameters().verticalExaggeration *this.edgeLength * 2, this.raster.getParameters().verticalExaggeration * this.raster.getParameters().estMaxHeight * this.raster.getParameters().heightScaling)];
+                Math.max(this.terrender.getParameters().verticalExaggeration *this.edgeLength * 2, this.terrender.getParameters().verticalExaggeration * this.terrender.getParameters().estMaxHeight * this.terrender.getParameters().heightScaling)];
         }
         let verticesIn2d = [];
         if (this.type < 4) {
@@ -641,7 +640,7 @@ class BinTreeNode {
         ];
 
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
 
         // Second Child (Bottom Left)
         childrenRefinementPoint = [...this.refinementPoint];
@@ -651,7 +650,7 @@ class BinTreeNode {
             this.offsetMblock[0] - currentDisplacement,
             this.offsetMblock[1] + currentDisplacement
         ];
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -673,7 +672,7 @@ class BinTreeNode {
             this.offsetMblock[1] + currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
 
         // Second Child (Top Left)
         childrenRefinementPoint = [...this.refinementPoint];
@@ -684,7 +683,7 @@ class BinTreeNode {
             this.offsetMblock[1] + currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -706,7 +705,7 @@ class BinTreeNode {
             this.offsetMblock[1] + currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
 
         // Second Child (Top Right)
         childrenRefinementPoint = [...this.refinementPoint];
@@ -717,7 +716,7 @@ class BinTreeNode {
             this.offsetMblock[1] - currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOPRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOPRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -738,7 +737,7 @@ class BinTreeNode {
             this.offsetMblock[1] - currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMLEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.firstChildGeomErrorNode));
 
         // Second Child (Bottom Right)
         childrenRefinementPoint = [...this.refinementPoint];
@@ -749,7 +748,7 @@ class BinTreeNode {
             this.offsetMblock[1] - currentDisplacement
         ];
 
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOMRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOMRIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, this.mblock, childOffset, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -801,12 +800,12 @@ class BinTreeNode {
         // First Child (Left)
         let childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[0] -= this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.LEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.LEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
 
         // Second Child (Top)
         childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[1] += this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOP, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOP, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -859,12 +858,12 @@ class BinTreeNode {
         // First Child (Top)
         let childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[1] += this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.TOP, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.TOP, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
 
         // Second Child (Right)
         childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[0] += this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.RIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.RIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -917,12 +916,12 @@ class BinTreeNode {
         // First Child (Right)
         let childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[0] += this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.RIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.RIGHT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
 
         // Second Child (Bottom)
         childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[1] -= this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOM, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOM, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 
     /**
@@ -975,12 +974,12 @@ class BinTreeNode {
         // First Child (Bottom)
         let childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[1] -= this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.BOTTOM, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.BOTTOM, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.firstChildGeomErrorNode));
 
         // Second Child (Left)
         childrenRefinementPoint = [...this.refinementPoint];
         childrenRefinementPoint[0] -= this.edgeLength / 2;
-        this.children.push(new BinTreeNode(this.raster, BinTreeNode.LEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
+        this.children.push(new BinTreeNode(this.terrender, BinTreeNode.LEFT, this, childrenRefinementPoint, childrenEdgeLength, childrenLod, childMblock, childrenOffsetMblock, this.secondChildGeomErrorNode));
     }
 }
 

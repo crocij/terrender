@@ -1,4 +1,4 @@
-import { Raster, StandardInputHandler } from 'raster-core';
+import { Terrender, StandardInputHandler } from 'terrender-core';
 import Chart from 'chart.js/auto';
 import Drawing from '../../common/Drawing';
 import DollyCam from '../../common/DollyCam';
@@ -25,37 +25,37 @@ let mainFunction = (config) => {
         isWebGL2 = false;
     }
 
-    let raster = new Raster(gl, config, config.initialCamera);
-    let inputHandler = new StandardInputHandler(raster);
+    let terrender = new Terrender(gl, config, config.initialCamera);
+    let inputHandler = new StandardInputHandler(terrender);
 
     // Setup Config UI 
     let lodCheckbox = document.querySelector('#showLod')
-    lodCheckbox.checked = raster.getParameters().showLodAsColor;
-    lodCheckbox.addEventListener('change', () => { raster.getParameters().setParam('showLodAsColor', lodCheckbox.checked) })
+    lodCheckbox.checked = terrender.getParameters().showLodAsColor;
+    lodCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('showLodAsColor', lodCheckbox.checked) })
 
     let renderGeometryCheckbox = document.querySelector('#renderGeometry')
-    renderGeometryCheckbox.checked = raster.getParameters().renderGeometry;
-    renderGeometryCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderGeometry', renderGeometryCheckbox.checked) })
+    renderGeometryCheckbox.checked = terrender.getParameters().renderGeometry;
+    renderGeometryCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('renderGeometry', renderGeometryCheckbox.checked) })
 
     let renderKPatchLinesCheckbox = document.querySelector('#renderKPatchLines')
-    renderKPatchLinesCheckbox.checked = raster.getParameters().renderKPatchLines;
-    renderKPatchLinesCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderKPatchLines', renderKPatchLinesCheckbox.checked) })
+    renderKPatchLinesCheckbox.checked = terrender.getParameters().renderKPatchLines;
+    renderKPatchLinesCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('renderKPatchLines', renderKPatchLinesCheckbox.checked) })
 
     let renderFlatCheckbox = document.querySelector('#renderFlat')
-    renderFlatCheckbox.checked = raster.getParameters().renderFlat;
-    renderFlatCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderFlat', renderFlatCheckbox.checked) });
+    renderFlatCheckbox.checked = terrender.getParameters().renderFlat;
+    renderFlatCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('renderFlat', renderFlatCheckbox.checked) });
 
     let renderUniColorCheckbox = document.querySelector('#renderUniColor')
-    renderUniColorCheckbox.checked = raster.getParameters().renderUniColor;
-    renderUniColorCheckbox.addEventListener('change', () => { raster.getParameters().setParam('renderUniColor', renderUniColorCheckbox.checked) });
+    renderUniColorCheckbox.checked = terrender.getParameters().renderUniColor;
+    renderUniColorCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('renderUniColor', renderUniColorCheckbox.checked) });
 
     let disableUpdateOnCamCheckbox = document.querySelector('#disableCamUpdate');
-    disableUpdateOnCamCheckbox.checked = raster.getParameters().disableUpdateOnCam;
-    disableUpdateOnCamCheckbox.addEventListener('change', () => { raster.getParameters().setParam('disableUpdateOnCam', disableUpdateOnCamCheckbox.checked) });
+    disableUpdateOnCamCheckbox.checked = terrender.getParameters().disableUpdateOnCam;
+    disableUpdateOnCamCheckbox.addEventListener('change', () => { terrender.getParameters().setParam('disableUpdateOnCam', disableUpdateOnCamCheckbox.checked) });
 
     let verticalExaggerationInput = document.querySelector('#verticalExaggeration');
-    verticalExaggerationInput.value = raster.getParameters().verticalExaggeration;
-    verticalExaggerationInput.addEventListener('change', () => { raster.getParameters().setParam('verticalExaggeration', verticalExaggerationInput.value) });
+    verticalExaggerationInput.value = terrender.getParameters().verticalExaggeration;
+    verticalExaggerationInput.addEventListener('change', () => { terrender.getParameters().setParam('verticalExaggeration', verticalExaggerationInput.value) });
 
     // Setup Info UI
     const fpsDiv = document.querySelector('#fps');
@@ -135,7 +135,7 @@ let mainFunction = (config) => {
     })
 
     let getBinNodeChartsLabels = () => {
-        let binNodeCounter = raster.getCounters().getBinNodeCounter().getCounters();
+        let binNodeCounter = terrender.getCounters().getBinNodeCounter().getCounters();
         return binNodeCounter.map((val, index) => index != binNodeCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
     }
 
@@ -146,7 +146,7 @@ let mainFunction = (config) => {
             labels: getBinNodeChartsLabels(),
             datasets: [{
                 label: '# of bintree nodes currently rendered',
-                data: raster.getCounters().getBinNodeCounter().getCounters(),
+                data: terrender.getCounters().getBinNodeCounter().getCounters(),
                 borderWidth: 1,
                 backgroundColor: [
                     'green',
@@ -163,10 +163,10 @@ let mainFunction = (config) => {
             }
         }
     });
-    let prevBinNodeCountersLength = raster.getCounters().getBinNodeCounter().getCounters().length;
+    let prevBinNodeCountersLength = terrender.getCounters().getBinNodeCounter().getCounters().length;
 
     let getMblockChartsLabels = () => {
-        let mblockCounter = raster.getCounters().getMblockCounter().getCounters();
+        let mblockCounter = terrender.getCounters().getMblockCounter().getCounters();
         return mblockCounter.map((val, index) => index != mblockCounter.length - 1 ? 'Lod: ' + index : 'Total: ');
     }
 
@@ -177,7 +177,7 @@ let mainFunction = (config) => {
             labels: getMblockChartsLabels(),
             datasets: [{
                 label: '# of quadtree nodes currently rendered',
-                data: raster.getCounters().getMblockCounter().getCounters(),
+                data: terrender.getCounters().getMblockCounter().getCounters(),
                 borderWidth: 1,
                 backgroundColor: [
                     'green',
@@ -196,7 +196,7 @@ let mainFunction = (config) => {
     });
 
     // Setup line drawing
-    const drawing = new Drawing(raster);
+    const drawing = new Drawing(terrender);
 
     // Add UI Buttons
     const chartContainer = document.querySelector('#chartContainer');
@@ -250,53 +250,53 @@ let mainFunction = (config) => {
     // UI Updates
     let updateMemoryUsageCharts = () => {
         ramUsageChart.data.datasets[0].data = [
-            raster.getQuadTree().renderList.size,
-            raster.getQuadTree().onGPUList.size,
-            raster.getQuadTree().onRAMList.size,
+            terrender.getQuadTree().renderList.size,
+            terrender.getQuadTree().onGPUList.size,
+            terrender.getQuadTree().onRAMList.size,
         ];
         ramUsageChart.update();
 
         gpuUsageChart.data.datasets[0].data = [
-            raster.getQuadTree().renderList.size,
-            raster.getQuadTree().onGPUList.size,
+            terrender.getQuadTree().renderList.size,
+            terrender.getQuadTree().onGPUList.size,
         ]
         gpuUsageChart.update();
 
-        if (raster.getCounters().getBinNodeCounter().getCounters().length != prevBinNodeCountersLength) {
-            prevBinNodeCountersLength = raster.getCounters().getBinNodeCounter().getCounters().length;
+        if (terrender.getCounters().getBinNodeCounter().getCounters().length != prevBinNodeCountersLength) {
+            prevBinNodeCountersLength = terrender.getCounters().getBinNodeCounter().getCounters().length;
             binNodesChart.data.labels = getBinNodeChartsLabels();
         }
-        binNodesChart.data.datasets[0].data = raster.getCounters().getBinNodeCounter().getCounters();
+        binNodesChart.data.datasets[0].data = terrender.getCounters().getBinNodeCounter().getCounters();
         binNodesChart.update();
 
-        mBlocksChart.data.datasets[0].data = raster.getCounters().getMblockCounter().getCounters();
+        mBlocksChart.data.datasets[0].data = terrender.getCounters().getMblockCounter().getCounters();
         mBlocksChart.update();
     }
 
     // Dolly Cam
     let dollyCam;
     if (config.dollyCam && config.dollyCam.length > 0) {
-        dollyCam = new DollyCam(raster, config.dollyCam);
+        dollyCam = new DollyCam(terrender, config.dollyCam);
     }
 
-    raster.setLoadingFinishedCallback(updateMemoryUsageCharts)
-    raster.setRenderLoopCallback((didDraw, swapped) => {
+    terrender.setLoadingFinishedCallback(updateMemoryUsageCharts)
+    terrender.setRenderLoopCallback((didDraw, swapped) => {
         didDraw && dollyCam && dollyCam.start();
         dollyCam && dollyCam.advance(swapped);
 
-        fpsDiv.innerHTML = 'FPS: ' + raster.fps;
-        vertexCounterDiv.innerHTML = 'Vertices: ' + raster.getCounters().getVertexCounter().vertices.toLocaleString();
-        loadingChart.data.datasets[0].data = [raster.getLoadingState().currentlyLoadingHeight, raster.getLoadingState().currentlyLoadingColor];
+        fpsDiv.innerHTML = 'FPS: ' + terrender.fps;
+        vertexCounterDiv.innerHTML = 'Vertices: ' + terrender.getCounters().getVertexCounter().vertices.toLocaleString();
+        loadingChart.data.datasets[0].data = [terrender.getLoadingState().currentlyLoadingHeight, terrender.getLoadingState().currentlyLoadingColor];
         loadingChart.update();
 
-        loadingDiv.style.visibility = !raster.getLoadingState().currentlyLoadingHeight && !raster.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
+        loadingDiv.style.visibility = !terrender.getLoadingState().currentlyLoadingHeight && !terrender.getLoadingState().currentlyLoadingColor ? 'hidden' : 'visible'
 
         // Cam does not update but maybe lines change -> redraw lines
         if (drawing.isActive && (drawing.hasChanged() || didDraw)) {
             drawing.renderResult();
         }
     });
-    raster.setDrawCallback(() => {
+    terrender.setDrawCallback(() => {
 
         // Terrain has changed and line draw will not happen in general render loop callback
         if (!drawing.isActive) {
@@ -305,13 +305,13 @@ let mainFunction = (config) => {
     });
 
     if (isWebGL2) {
-        raster.getGlInfo().recreateCombinedRenderTargets()
+        terrender.getGlInfo().recreateCombinedRenderTargets()
     } else {
-        raster.getGlInfo().recreateColorRenderTarget();
-        raster.getGlInfo().recreatePixelPosRenderTarget();
+        terrender.getGlInfo().recreateColorRenderTarget();
+        terrender.getGlInfo().recreatePixelPosRenderTarget();
     }
 
-    raster.start();
+    terrender.start();
 }
 
 fetch('config').then(res => {

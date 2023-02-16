@@ -9,7 +9,7 @@ import Counters from './Utils/Counters';
 import GlInfo from './Utils/GlInfo';
 import StandardInputHandler from './inputHandlers/StandardInputHandler';
 
-class Raster {
+class Terrender {
     #counters;
     #loadingState;
     #timer;
@@ -347,4 +347,4 @@ class Raster {
     }
 }
 
-export {Raster, StandardInputHandler};
+export {Terrender, StandardInputHandler};

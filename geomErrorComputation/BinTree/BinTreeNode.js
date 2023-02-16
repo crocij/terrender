@@ -10,7 +10,7 @@ class BinTreeNode {
 
     /**
      * 
-     * @param {object} config Raster
+     * @param {object} config
      * @param {BinTree} tree
      * @param {Number} type 
      * @param {Number} lod Lod in the BinTree (increases by one with every step)
