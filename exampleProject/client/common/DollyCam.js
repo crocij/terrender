@@ -3,6 +3,8 @@ const v3 = twgl.v3;
 
 let waitTimeDownloads = 0;
 
+const DO_BENCHMARK = false;
+
 /**
  * 
  * @param {String} content 
@@ -45,12 +47,13 @@ class DollyCam {
         this.running = false;
         this.init = true;
 
-        // UNCOMMENT FOR BENCH (1/3)
-        // this.nrSwapped = 0;
-        // this.timeLine = [];
-        // this.fpsBuckets = new Uint32Array(300);
-        // this.genericCounters = {};
-        // this.timers = {}
+        if (DO_BENCHMARK) {
+            this.nrSwapped = 0;
+            this.timeLine = [];
+            this.fpsBuckets = new Uint32Array(300);
+            this.genericCounters = {};
+            this.timers = {}
+        }
     }
 
     paresConfig = (dollyConfig) => {
@@ -127,52 +130,54 @@ class DollyCam {
             this.terrender.getCamera().changeCamPosition(currentStep.startPostion, currentStep.startTarget);
 
             // UNCOMMENT FOR BENCH (2/3)
-            // console.log('Nr. of swaps durring dolly: ' + this.nrSwapped);
-            // this.terrender.getTimer().writeAverageTimingsToConsole();
-            // let csv;
-            // let encodedUri;
+            if (DO_BENCHMARK) {
+                console.log('Nr. of swaps durring dolly: ' + this.nrSwapped);
+                this.terrender.getTimer().writeAverageTimingsToConsole();
+                let csv;
+                let encodedUri;
 
-            // Only Swaps
-            // csv = 'data:text/csv;charset=utf-8,timeStamp,swapped\r\n' + this.timeLine.filter(item => item.swapped).map(item => item.timeStamp + ',1').join('\r\n');
-            // encodedUri = encodeURI(csv);
-            // download(encodedUri, 'swaps');
+                // Only Swaps
+                csv = 'data:text/csv;charset=utf-8,timeStamp,swapped\r\n' + this.timeLine.filter(item => item.swapped).map(item => item.timeStamp + ',1').join('\r\n');
+                encodedUri = encodeURI(csv);
+                download(encodedUri, 'swaps');
 
 
-            // FPS and Swaps
-            // csv = this.timeLine.reduce((prev, current) => {
-            //     if (current.timeStamp < 10 && !current.swapped) {
-            //         return prev;
-            //     }
-            //     return prev + current.timeStamp + ',' + (current.fps < 55 ? current.fps : '') + ',' + (current.swapped ? 1 : '') + '\r\n';
-            // }, 'data:text/csv;charset=utf-8,timeStamp,fps,swapped\r\n');
-            // encodedUri = encodeURI(csv);
-            // download(encodedUri, 'swapsAndFps');
+                // FPS and Swaps
+                csv = this.timeLine.reduce((prev, current) => {
+                    if (current.timeStamp < 10 && !current.swapped) {
+                        return prev;
+                    }
+                    return prev + current.timeStamp + ',' + (current.fps < 55 ? current.fps : '') + ',' + (current.swapped ? 1 : '') + '\r\n';
+                }, 'data:text/csv;charset=utf-8,timeStamp,fps,swapped\r\n');
+                encodedUri = encodeURI(csv);
+                download(encodedUri, 'swapsAndFps');
 
-            // Histo Data
-            // csv = this.fpsBuckets.reduce((prev, current, currentI) => {
-            //     if (current > 0) {
-            //         return prev + (currentI + 1) + ',' + current + '\r\n'; 
-            //     }
-            //     return prev;
-            // }, 'data:text/csv;charset=utf-8,fps,number\r\n')
-            // encodedUri = encodeURI(csv);
-            // download(encodedUri, 'histogram');
+                // Histo Data
+                csv = this.fpsBuckets.reduce((prev, current, currentI) => {
+                    if (current > 0) {
+                        return prev + (currentI + 1) + ',' + current + '\r\n'; 
+                    }
+                    return prev;
+                }, 'data:text/csv;charset=utf-8,fps,number\r\n')
+                encodedUri = encodeURI(csv);
+                download(encodedUri, 'histogram');
 
-            // Generic Counters
-            // Object.keys(this.genericCounters).forEach(counterName => {
-            //     let entries = this.genericCounters[counterName];
-            //     csv = 'data:text/csv;charset=utf-8,timeStamp,' + counterName + '\r\n' + entries.map(entry => entry.timeStamp + ',' + entry.value).join('\r\n');
-            //     encodedUri = encodeURI(csv);
-            //     download(encodedUri, 'conunter_' + counterName);
-            // });
+                // Generic Counters
+                Object.keys(this.genericCounters).forEach(counterName => {
+                    let entries = this.genericCounters[counterName];
+                    csv = 'data:text/csv;charset=utf-8,timeStamp,' + counterName + '\r\n' + entries.map(entry => entry.timeStamp + ',' + entry.value).join('\r\n');
+                    encodedUri = encodeURI(csv);
+                    download(encodedUri, 'conunter_' + counterName);
+                });
 
-            // // Timers
-            // Object.keys(this.timers).forEach(timerName => {
-            //     let entries = this.timers[timerName];
-            //     csv = 'data:text/csv;charset=utf-8,timeStamp,' + timerName + '\r\n' + entries.map(entry => entry.timeStamp + ',' + entry.value).join('\r\n');
-            //     encodedUri = encodeURI(csv);
-            //     download(encodedUri, 'timer_' + timerName);
-            // });
+                // Timers
+                Object.keys(this.timers).forEach(timerName => {
+                    let entries = this.timers[timerName];
+                    csv = 'data:text/csv;charset=utf-8,timeStamp,' + timerName + '\r\n' + entries.map(entry => entry.timeStamp + ',' + entry.value).join('\r\n');
+                    encodedUri = encodeURI(csv);
+                    download(encodedUri, 'timer_' + timerName);
+                });
+            }
 
             return;
         }
@@ -189,50 +194,51 @@ class DollyCam {
 
         this.terrender.getCamera().changeCamPosition(newPosition, newTarget);
 
-        // UNCOMMENT FOR BENCH (3/3)
-        // if (swapped) {
-        //     this.nrSwapped++;
-        // }
+        if (DO_BENCHMARK) {
+            if (swapped) {
+                this.nrSwapped++;
+            }
 
-        // let currentFPS = this.terrender.getTimer().getTimer('fps').lastValue;
-        // if (currentFPS < 55 || swapped) {
-        //     this.timeLine.push({ timeStamp: currentTime, fps: currentFPS, swapped: swapped });
-        // }
-        // this.fpsBuckets[currentFPS - 1]++;
-        // let counters = this.terrender.getCounters().getGenericCounters();
-        // Object.keys(counters).forEach(counterName => {
-        //     let lastEntries = this.genericCounters[counterName];
-        //     let lastVal = undefined;
-        //     let currentVal = counters[counterName].getValue();
-        //     if (!Array.isArray(lastEntries)) {
-        //         this.genericCounters[counterName] = [];
-        //     } else {
-        //         lastVal = lastEntries[lastEntries.length - 1].value;
-        //     }
+            let currentFPS = this.terrender.getTimer().getTimer('fps').lastValue;
+            if (currentFPS < 55 || swapped) {
+                this.timeLine.push({ timeStamp: currentTime, fps: currentFPS, swapped: swapped });
+            }
+            this.fpsBuckets[currentFPS - 1]++;
+            let counters = this.terrender.getCounters().getGenericCounters();
+            Object.keys(counters).forEach(counterName => {
+                let lastEntries = this.genericCounters[counterName];
+                let lastVal = undefined;
+                let currentVal = counters[counterName].getValue();
+                if (!Array.isArray(lastEntries)) {
+                    this.genericCounters[counterName] = [];
+                } else {
+                    lastVal = lastEntries[lastEntries.length - 1].value;
+                }
 
-        //     if (lastVal !== currentVal) {
-        //         this.genericCounters[counterName].push({ value: currentVal, timeStamp: currentTime });
-        //     }
-        // });
+                if (lastVal !== currentVal) {
+                    this.genericCounters[counterName].push({ value: currentVal, timeStamp: currentTime });
+                }
+            });
 
-        // let timers = this.terrender.getTimer().timer;
-        // Object.keys(timers).forEach(timerName => {
-        //     if (timers[timerName].counter === 0) {
-        //         return;
-        //     }
-        //     let lastEntries = this.timers[timerName];
-        //     let lastVal = undefined;
-        //     let currentVal = timers[timerName].lastValue;
-        //     if (!Array.isArray(lastEntries)) {
-        //         this.timers[timerName] = [];
-        //     } else {
-        //         lastVal = lastEntries[lastEntries.length - 1].value;
-        //     }
+            let timers = this.terrender.getTimer().timer;
+            Object.keys(timers).forEach(timerName => {
+                if (timers[timerName].counter === 0) {
+                    return;
+                }
+                let lastEntries = this.timers[timerName];
+                let lastVal = undefined;
+                let currentVal = timers[timerName].lastValue;
+                if (!Array.isArray(lastEntries)) {
+                    this.timers[timerName] = [];
+                } else {
+                    lastVal = lastEntries[lastEntries.length - 1].value;
+                }
 
-        //     if (lastVal !== currentVal) {
-        //         this.timers[timerName].push({ value: currentVal, timeStamp: currentTime });
-        //     }
-        // });
+                if (lastVal !== currentVal) {
+                    this.timers[timerName].push({ value: currentVal, timeStamp: currentTime });
+                }
+            });
+        }
     }
 }
 
