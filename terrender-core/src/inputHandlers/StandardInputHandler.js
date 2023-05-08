@@ -304,6 +304,8 @@ class StandardInputHandler {
     rightPointerUp = (event) => {
         event.preventDefault();
         this.rightPointerPressed = false;
+        this.leftPointerPressed = false;
+        this.rightPointerPressed = false;
         this.mouseCoords = undefined;
     }
 
