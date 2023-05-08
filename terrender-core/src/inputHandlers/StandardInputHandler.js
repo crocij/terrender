@@ -225,9 +225,9 @@ class StandardInputHandler {
     //
 
     onPointerDown = (event) => {
-        if (event.button == 0) {
+        if (event.button == 0 && !event.altKey) {
             this.leftPointerDown(event);
-        } else if (event.button == 2) {
+        } else if (event.button == 2 || (event.button == 0 && event.altKey)) {
             this.rightPointerDown(event);
         } else if (event.button == 1) {
             this.middlePointerDown(event);
@@ -256,10 +256,15 @@ class StandardInputHandler {
                 this.sensitivity * (oldMouseCoords[0] - currentMouseCoords[0]),
                 this.sensitivity * (oldMouseCoords[1] - currentMouseCoords[1]),
             ];
-            if (this.leftPointerPressed && !event.altKey) {
+
+            if ((this.leftPointerPressed && !event.altKey) || (this.rightPointerPressed && !event.altKey)) {
+                this.rightPointerPressed = false;
+                this.leftPointerPressed = true;
                 diffMouseCoords[1] = -1 * diffMouseCoords[1];
                 this.moveRelativeToTerrain(diffMouseCoords);
-            } else if (this.rightPointerPressed) {
+            } else if (this.rightPointerPressed || (this.leftPointerPressed && event.altKey)) {
+                this.leftPointerPressed = false;
+                this.rightPointerPressed = true;
                 diffMouseCoords[0] *= SENSITIVITY_FACTOR_LOOK_AROUND;
                 diffMouseCoords[1] *= -1 * SENSITIVITY_FACTOR_LOOK_AROUND;
                 this.lookAround(diffMouseCoords);
@@ -288,6 +293,7 @@ class StandardInputHandler {
     leftPointerUp = (event) => {
         event.preventDefault();
         this.leftPointerPressed = false;
+        this.rightPointerPressed = false;
         this.mouseCoords = undefined;
     }
 
