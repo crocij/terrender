@@ -36,7 +36,7 @@ class StandardInputHandler {
             onmove: (event) => {
                 if (Math.abs(event.dy) > 2) {
                     this.onDoublePan(event.dy)
-                } else if(Math.abs(event.da) > 1) {
+                } else if (Math.abs(event.da) > 1) {
                     this.onRotate(event.da);
                 } else if (event.scale > 1.05 || event.scale < 0.95) {
                     this.onPinch(event.ds);
@@ -225,12 +225,10 @@ class StandardInputHandler {
     //
 
     onPointerDown = (event) => {
-        if (event.button == 0 && !event.altKey) {
+        if (event.button == 0) {
             this.leftPointerDown(event);
-        } else if (event.button == 2 || (event.button == 0 && event.altKey)) {
+        } else if (event.button == 2) {
             this.rightPointerDown(event);
-        } else if (event.button == 1) {
-            this.middlePointerDown(event);
         }
     }
 
@@ -257,14 +255,10 @@ class StandardInputHandler {
                 this.sensitivity * (oldMouseCoords[1] - currentMouseCoords[1]),
             ];
 
-            if ((this.leftPointerPressed && !event.altKey) || (this.rightPointerPressed && !event.altKey)) {
-                this.rightPointerPressed = false;
-                this.leftPointerPressed = true;
+            if (this.leftPointerPressed && !event.altKey) {
                 diffMouseCoords[1] = -1 * diffMouseCoords[1];
                 this.moveRelativeToTerrain(diffMouseCoords);
             } else if (this.rightPointerPressed || (this.leftPointerPressed && event.altKey)) {
-                this.leftPointerPressed = false;
-                this.rightPointerPressed = true;
                 diffMouseCoords[0] *= SENSITIVITY_FACTOR_LOOK_AROUND;
                 diffMouseCoords[1] *= -1 * SENSITIVITY_FACTOR_LOOK_AROUND;
                 this.lookAround(diffMouseCoords);
@@ -293,30 +287,22 @@ class StandardInputHandler {
     leftPointerUp = (event) => {
         event.preventDefault();
         this.leftPointerPressed = false;
-        this.rightPointerPressed = false;
-        this.mouseCoords = undefined;
+        if (!this.rightPointerPressed) {
+            this.mouseCoords = undefined;
+        }
     }
 
     rightPointerDown = (event) => {
         event.preventDefault()
         this.rightPointerPressed = true;
     }
+
     rightPointerUp = (event) => {
         event.preventDefault();
         this.rightPointerPressed = false;
-        this.leftPointerPressed = false;
-        this.rightPointerPressed = false;
-        this.mouseCoords = undefined;
-    }
-
-    middlePointerDown = (event) => {
-        event.preventDefault();
-        this.middlePointerPressed = true;
-    }
-    middlePointerUp = (event) => {
-        event.preventDefault();
-        this.middlePointerPressed = false;
-        this.mouseCoords = undefined;
+        if (!this.leftPointerPressed) {
+            this.mouseCoords = undefined;
+        }
     }
 
     onContextMenu = (event) => {
