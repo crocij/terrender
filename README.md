@@ -57,6 +57,7 @@ Note that the default parameters are fit for the world dataset
 - ```client.colorIsJpeg``` Set to true if the color textures are in JPEG format, else png is assumed. Default: ```false```
 - ```client.heightIsTiff``` Set to true if the height textures are in TIFF format, else png is assumed. Default: ```true```
 - ```client.initialCamera``` Defines the initial camera settings, object of the following form: ```{"pos": [0, 0, 10],"target": [10, 0, 0],"up": [0, 0, 1],"sensitivity": 0.5}```. Default: Is derived from the other settings
+- ```client.legalNotice``` Defines the legal notice to be displayed in the lower right corner. Is an object of the following form, note that ```url``` is optional: ```{"text": "Text to Display", "url": "https://url.to.navigate.to"}```
 
 ## Running
 To start the server run ```node /path/to/git/exampleProject/server/index.js /path/to/config.json``` (the relative paths could also be used). If no config file is provided it will look for a config file names ```config.json``` in the server folder.

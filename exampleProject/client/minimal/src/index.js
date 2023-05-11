@@ -31,9 +31,20 @@ let mainFunction = (config) => {
     const loadingDiv = document.querySelector('#loadingSpinner');
 
     // Setup legal notice
-    const legalNotice = config.legalNotice || '';
-    const legalNoticeDiv = document.querySelector('#legalNotice');
-    legalNoticeDiv.innerHTML = legalNotice;
+    if (config.legalNotice) {
+        const legalNoticeText = config.legalNotice.text || '';
+        const legalNoticeURL = config.legalNotice.url;
+        const legalNoticeDiv = document.querySelector('#legalNotice');
+        if (legalNoticeURL) {
+            let linkElem = document.createElement('a');
+            linkElem.target = '_blank';
+            linkElem.href = legalNoticeURL;
+            linkElem.innerHTML = legalNoticeText;
+            legalNoticeDiv.appendChild(linkElem)
+        } else {
+            legalNoticeDiv.innerHTML = legalNoticeText;
+        }
+    }
 
     // Setup line drawing
     const drawing = new Drawing(terrender);
